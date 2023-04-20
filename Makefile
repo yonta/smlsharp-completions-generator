@@ -504,3 +504,56 @@ smlsharp/src/compiler/compilePhases/parser/main/interface.grm.sml: \
 smlsharp/src/compiler/compilePhases/parser/main/interface.lex.sml: \
  smlsharp/src/compiler/compilePhases/parser/main/interface.lex
 	$(SMLLEX) -o $@ $<
+
+clean:
+	rm -f CompletionsGenerator CompletionsGenerator.o \
+ smlsharp/src/compiler/compilePhases/parser/main/InterfaceParser.o \
+ smlsharp/src/compiler/compilePhases/parser/main/ParserError.ppg.o \
+ smlsharp/src/compiler/compilePhases/parser/main/ParserError.ppg.sml \
+ smlsharp/src/compiler/compilePhases/parser/main/interface.grm.desc \
+ smlsharp/src/compiler/compilePhases/parser/main/interface.grm.o \
+ smlsharp/src/compiler/compilePhases/parser/main/interface.grm.sml \
+ smlsharp/src/compiler/compilePhases/parser/main/interface.grm.sml.desc \
+ smlsharp/src/compiler/compilePhases/parser/main/interface.grm.sml.sml \
+ smlsharp/src/compiler/compilePhases/parser/main/interface.lex.o \
+ smlsharp/src/compiler/compilePhases/parser/main/interface.lex.sml \
+ smlsharp/src/compiler/compilerIRs/absyn/main/Absyn.o \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynConst.o \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynConstFormatter.o \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynConstFormatter.sml \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynFormatter.o \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynFormatter.sml \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynInterface.ppg.o \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynInterface.ppg.sml \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynSQL.o \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynSQLFormatter.o \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynSQLFormatter.sml \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynTy.o \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynTyFormatter.o \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynTyFormatter.sml \
+ smlsharp/src/compiler/compilerIRs/absyn/main/ConstFormat.o \
+ smlsharp/src/compiler/compilerIRs/absyn/main/InterfaceName.ppg.o \
+ smlsharp/src/compiler/compilerIRs/absyn/main/InterfaceName.ppg.sml \
+ smlsharp/src/compiler/compilerIRs/absyn/main/RequirePath.o \
+ smlsharp/src/compiler/data/control/main/Control.o \
+ smlsharp/src/compiler/data/control/main/PrintControl.o \
+ smlsharp/src/compiler/data/symbols/main/Loc.o \
+ smlsharp/src/compiler/data/symbols/main/RecordLabel.o \
+ smlsharp/src/compiler/data/symbols/main/Symbol.o \
+ smlsharp/src/compiler/extensions/debug/main/Bug.o \
+ smlsharp/src/compiler/extensions/format-utils/main/SmlppgUtil.ppg.o \
+ smlsharp/src/compiler/extensions/format-utils/main/SmlppgUtil.ppg.sml \
+ smlsharp/src/compiler/extensions/usererror/main/UserError.ppg.o \
+ smlsharp/src/compiler/extensions/usererror/main/UserError.ppg.sml \
+ smlsharp/src/compiler/libs/digest/main/SHA3.o \
+ smlsharp/src/compiler/libs/env/main/IEnv.o \
+ smlsharp/src/compiler/libs/env/main/IOrd.o \
+ smlsharp/src/compiler/libs/env/main/ISet.o \
+ smlsharp/src/compiler/libs/env/main/SEnv.o \
+ smlsharp/src/compiler/libs/env/main/SOrd.o \
+ smlsharp/src/compiler/libs/env/main/SSet.o \
+ smlsharp/src/compiler/libs/ids/main/GenIDFun.o \
+ smlsharp/src/compiler/libs/ids/main/LocalID.o \
+ smlsharp/src/compiler/libs/list-utils/main/ListSorter.o \
+ smlsharp/src/compiler/libs/toolchain/main/Filename.o \
+ smlsharp/src/compiler/libs/util/main/TermFormat.o
