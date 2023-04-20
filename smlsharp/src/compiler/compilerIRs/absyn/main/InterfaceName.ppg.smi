@@ -1,8 +1,8 @@
 _require local "../../../libs/digest/main/SHA3.smi"
 (* _require local "../../../libs/env/main/SEnv.smi" *)
 
-_require "../../../../smlformat-lib.smi"
-_require "../../../../basis.smi"
+_require "smlformat-lib.smi"
+_require "basis.smi"
 _require "../../../libs/toolchain/main/Filename.smi"
 _require "../../../extensions/debug/main/Bug.smi"
 _require "../../../data/symbols/main/Loc.smi"

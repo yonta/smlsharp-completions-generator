@@ -1,7 +1,7 @@
-_require "../../../../basis.smi"
-_require "../../../../smlformat-lib.smi"
-_require "../../../../smlnj-lib/Util2/binary-map-fn2.smi"
-_require "../../../../smlnj-lib/Util/binary-set-fn.smi"
+_require "basis.smi"
+_require "smlformat-lib.smi"
+_require "smlnj-lib/Util2/binary-map-fn2.smi"
+_require "smlnj-lib/Util/binary-set-fn.smi"
 _require "./Symbol.smi"
 
 structure RecordLabel =
