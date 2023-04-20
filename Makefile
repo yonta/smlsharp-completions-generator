@@ -1,6 +1,9 @@
 SMLSHARP = smlsharp
 SMLFLAGS = -O2
 LIBS =
+SMLFORMAT = smlformat
+SMLLEX = smllex
+SMLYACC = smlyacc
 all: CompletionsGenerator
 CompletionsGenerator: smlsharp/src/compiler/libs/env/main/SOrd.smi \
  smlsharp/src/compiler/libs/env/main/SEnv.smi \
@@ -468,3 +471,36 @@ CompletionsGenerator.o: CompletionsGenerator.sml \
  CompletionsGenerator.smi
 	$(SMLSHARP) $(SMLFLAGS) -o CompletionsGenerator.o -c \
  CompletionsGenerator.sml
+smlsharp/src/compiler/extensions/usererror/main/UserError.ppg.sml: \
+ smlsharp/src/compiler/extensions/usererror/main/UserError.ppg
+	$(SMLFORMAT) --output=$@ $<
+smlsharp/src/compiler/extensions/format-utils/main/SmlppgUtil.ppg.sml: \
+ smlsharp/src/compiler/extensions/format-utils/main/SmlppgUtil.ppg
+	$(SMLFORMAT) --output=$@ $<
+smlsharp/src/compiler/compilerIRs/absyn/main/InterfaceName.ppg.sml: \
+ smlsharp/src/compiler/compilerIRs/absyn/main/InterfaceName.ppg
+	$(SMLFORMAT) --output=$@ $<
+smlsharp/src/compiler/compilerIRs/absyn/main/AbsynInterface.ppg.sml: \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynInterface.ppg
+	$(SMLFORMAT) --output=$@ $<
+smlsharp/src/compiler/compilePhases/parser/main/ParserError.ppg.sml: \
+ smlsharp/src/compiler/compilePhases/parser/main/ParserError.ppg
+	$(SMLFORMAT) --output=$@ $<
+smlsharp/src/compiler/compilerIRs/absyn/main/AbsynTyFormatter.sml: \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynTy.sml
+	$(SMLFORMAT) --output=$@ --separate=AbsynTyFormatter $<
+smlsharp/src/compiler/compilerIRs/absyn/main/AbsynConstFormatter.sml: \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynConst.sml
+	$(SMLFORMAT) --output=$@ --separate=AbsynConstFormatter $<
+smlsharp/src/compiler/compilerIRs/absyn/main/AbsynSQLFormatter.sml: \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynSQL.sml
+	$(SMLFORMAT) --output=$@ --separate=AbsynSQLFormatter $<
+smlsharp/src/compiler/compilerIRs/absyn/main/AbsynFormatter.sml: \
+ smlsharp/src/compiler/compilerIRs/absyn/main/Absyn.sml
+	$(SMLFORMAT) --output=$@ --separate=AbsynFormatter $<
+smlsharp/src/compiler/compilePhases/parser/main/interface.grm.sml: \
+ smlsharp/src/compiler/compilePhases/parser/main/interface.grm
+	$(SMLYACC) -s -p $< $<
+smlsharp/src/compiler/compilePhases/parser/main/interface.lex.sml: \
+ smlsharp/src/compiler/compilePhases/parser/main/interface.lex
+	$(SMLLEX) -o $@ $<
