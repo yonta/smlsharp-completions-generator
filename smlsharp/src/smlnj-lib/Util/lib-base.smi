@@ -1,0 +1,11 @@
+_require local "../../basis.smi"
+_require local "./lib-base-sig.sml"
+
+structure LibBase =
+  struct
+    exception Unimplemented of string
+    exception Impossible of string
+    exception NotFound
+    val failure : {module : string, func : string, msg : string} -> 'a
+  end
+

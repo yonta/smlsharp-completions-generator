@@ -1,0 +1,99 @@
+(**
+ * @copyright (C) 2021 SML# Development Team.
+ * @author UENO Katsuhiro
+ * @author ENDO Hiroki
+ *)
+structure ElaborateErrorSQL =
+struct
+
+  (***************************************************************************)
+  
+  (*%
+   * @formatter(Absyn.ty) Absyn.format_ty
+   * @formatter(RecordLabel.label) RecordLabel.format_label
+   * @formatter(Symbol.symbol) Symbol.format_symbol
+   *)
+  exception
+  (*
+   *)
+  (*%
+   * @format(label)
+   *    "duplicate" +d "tuple" +d "in" +d "from" +d "clause:" +d label
+   *)
+  DuplicateSQLFromLabel of RecordLabel.label
+
+  and
+  (*
+   *)
+  (*%
+   * @format(label)
+   *    "duplicate" +d "label" +d "in" +d "select" +d "clause:" +d label
+   *)
+  DuplicateSQLSelectLabel of RecordLabel.label
+
+  and
+  (*
+   *)
+  (*%
+   * @format(label)
+   *    "duplicate" +d "label" +d "in" +d "insert" +d "clause:" +d label
+   *)
+  DuplicateSQLInsertLabel of RecordLabel.label
+
+  and
+  (*
+   *)
+  (*%
+   * @format(label)
+   *    "duplicate" +d "label" +d "in" +d "set" +d "clause:" +d label
+   *)
+  DuplicateSQLSetLabel of RecordLabel.label
+
+  and
+  (*
+   *)
+  (*%
+   * @format
+   *    "different" +d "number" +d "of" +d "labels" +d "in" +d "insert"
+   *    +d "clause"
+   *)
+  NumberOfSQLInsertLabel
+
+  and
+  (*%
+   * @format(name)
+   *    "cross" +d "join" +d "cannot" +d "be" +d "named:" +d name
+   *)
+  CrossJoinName of RecordLabel.label
+
+  and
+  (*%
+   * @format
+   *    "natural" +d "join" +d "with" +d "joined" +d "tables" +d "not"
+   *	+d "allowed"
+   *)
+  UnnaturalNaturalJoin
+
+  and
+  (*%
+   * @format
+   *    "ML" +d "function" +d "application" +d "found" +d "in" +d "SQL"
+   *    +d "query"
+   *)
+  AppInSQLQuery
+
+  and
+  (*%
+   * @format
+   *    "ML" +d "tuple" +d "found" +d "in" +d "SQL" +d "query"
+   *)
+  TupleInSQLQuery
+
+  and
+  (*%
+   * @format
+   *    "~" +d "must" +d "be" +d "unary" +d "in" +d "SQL" +d "query"
+   *)
+  NegNotUnary
+
+end

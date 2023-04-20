@@ -1,0 +1,33 @@
+_require "../../../../basis.smi"
+_require local "../../../extensions/debug/main/Bug.smi"
+_require local "../../../data/types/main/TypesBasics.smi"
+_require "../../../compilerIRs/typedlambda/main/TypedLambda.ppg.smi"
+_require "../../datatypecompilation/main/PrimitiveTypedLambda.smi"
+_require "./KIND_INSTANCE.sig"
+
+structure OverloadKind =
+struct
+  type singleton_ty_body = Types.oprimSelector
+  type kind = {instances : Types.ty list, operators : Types.oprimSelector list}
+
+  datatype instance =
+      APP of {appExp: TypedLambda.tlexp -> TypedLambda.tlexp,
+              argTy: Types.ty, bodyTy: Types.ty,
+              singletonTy: Types.singletonTy, loc: RecordCalc.loc}
+    | EXP of TypedLambda.tlexp
+
+  val singletonTy
+      : singleton_ty_body -> Types.singletonTy
+  val generateArgs
+      : Types.btvEnv
+        -> BoundTypeVarID.id * kind
+        -> Types.singletonTy list
+  val compare
+      : singleton_ty_body * singleton_ty_body -> order
+  val generateInstance
+      : {lookup : Types.singletonTy -> RecordCalc.varInfo option,
+         btvEnv : Types.btvEnv}
+        -> singleton_ty_body
+        -> RecordCalc.loc
+        -> instance option
+end

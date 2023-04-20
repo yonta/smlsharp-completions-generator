@@ -1,0 +1,16 @@
+_require local "../../basis/main/SMLSharp_Runtime.smi"
+
+structure DynamicLink =
+struct
+  exception Error of string
+  type lib (= ptr)
+  datatype scope = LOCAL | GLOBAL
+  datatype mode = LAZY | NOW
+  val default : unit -> lib
+  val next : unit -> lib
+  val dlopen : string -> lib
+  val dlopen' : string * scope * mode -> lib
+  val dlsym : lib * string -> codeptr
+  val dlsym' : lib * string -> unit ptr
+  val dlclose : lib -> unit
+end

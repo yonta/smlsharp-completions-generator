@@ -1,0 +1,12 @@
+(**
+ * User errors detected in FFICompilation phase.
+ * @copyright (C) 2021 SML# Development Team.
+ * @author Tomohiro Sasaki
+  
+  2016 ohori 以下は，暫定版．他のフェーズに合わせて
+  書きなおす必要がある．
+
+ *)
+structure FFICompilationError =
+struct
+end

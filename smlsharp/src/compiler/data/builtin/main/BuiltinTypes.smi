@@ -1,0 +1,169 @@
+_require local "../../../../basis.smi"
+(* _require local "../../../../smlformat-lib.smi" *)
+_require "../../../data/symbols/main/Loc.smi"
+_require local "../../../data/symbols/main/RecordLabel.smi"
+_require local "../../../extensions/debug/main/Bug.smi"
+_require local "../../../compilerIRs/idcalc/main/EvalIty.smi"
+_require local "../../../data/runtimetypes/main/DatatypeLayout.smi"
+_require local "../../../data/runtimetypes/main/RuntimeTypes.ppg.smi"
+
+_require "../../../data/symbols/main/Symbol.smi"
+_require local "../../../libs/ids/main/LocalID.smi"
+_require "../../../compilerIRs/idcalc/main/IDCalc.ppg.smi"
+_require "../../types/main/Types.ppg.smi"
+
+structure BuiltinTypes =
+struct
+
+  type tstrInfo =  {tfun:IDCalc.tfun, varE:IDCalc.varE, defRange:Loc.loc,
+                    formals:IDCalc.formals, conSpec:IDCalc.conSpec}
+
+  val findTstrInfo : Symbol.symbol -> tstrInfo option
+
+  val int32TstrInfo : tstrInfo
+  val int32TyCon : Types.tyCon
+  val int32ITy : IDCalc.ty 
+  val int32Ty : Types.ty
+
+  val int8TstrInfo : tstrInfo
+  val int8TyCon : Types.tyCon
+  val int8ITy : IDCalc.ty 
+  val int8Ty : Types.ty
+
+  val int16TstrInfo : tstrInfo
+  val int16TyCon : Types.tyCon
+  val int16ITy : IDCalc.ty 
+  val int16Ty : Types.ty
+
+  val int64TstrInfo : tstrInfo
+  val int64TyCon : Types.tyCon
+  val int64ITy : IDCalc.ty 
+  val int64Ty : Types.ty
+       
+  val intInfTstrInfo : tstrInfo
+  val intInfTyCon : Types.tyCon
+  val intInfITy : IDCalc.ty
+  val intInfTy : Types.ty
+       
+  val word32TstrInfo : tstrInfo
+  val word32TyCon : Types.tyCon
+  val word32ITy : IDCalc.ty
+  val word32Ty : Types.ty
+
+  val word8TstrInfo : tstrInfo
+  val word8TyCon : Types.tyCon
+  val word8ITy : IDCalc.ty
+  val word8Ty : Types.ty
+       
+  val word16TstrInfo : tstrInfo
+  val word16TyCon : Types.tyCon
+  val word16ITy : IDCalc.ty
+  val word16Ty : Types.ty
+       
+  val word64TstrInfo : tstrInfo
+  val word64TyCon : Types.tyCon
+  val word64ITy : IDCalc.ty
+  val word64Ty : Types.ty
+       
+  val charTstrInfo : tstrInfo
+  val charTyCon : Types.tyCon
+  val charITy : IDCalc.ty
+  val charTy : Types.ty
+       
+  val stringTstrInfo : tstrInfo
+  val stringTyCon : Types.tyCon
+  val stringITy : IDCalc.ty
+  val stringTy : Types.ty
+       
+  val real64TstrInfo : tstrInfo
+  val real64TyCon : Types.tyCon
+  val real64ITy : IDCalc.ty
+  val real64Ty : Types.ty
+       
+  val real32TstrInfo : tstrInfo
+  val real32TyCon : Types.tyCon
+  val real32ITy : IDCalc.ty
+  val real32Ty : Types.ty
+       
+  val unitTstrInfo : tstrInfo
+  val unitTyCon : Types.tyCon
+  val unitITy : IDCalc.ty
+  val unitTy : Types.ty
+       
+  val ptrTstrInfo : tstrInfo
+  val ptrTyCon : Types.tyCon
+
+  val codeptrTstrInfo : tstrInfo
+  val codeptrTyCon : Types.tyCon
+  val codeptrTy : Types.ty
+       
+  val arrayTstrInfo : tstrInfo
+  val arrayTyCon : Types.tyCon
+      
+  val vectorTstrInfo : tstrInfo
+  val vectorTyCon : Types.tyCon
+       
+  val boxedTstrInfo : tstrInfo
+  val boxedTyCon : Types.tyCon
+  val boxedITy : IDCalc.ty
+  val boxedTy : Types.ty
+       
+  val exnTstrInfo : tstrInfo
+  val exnTyCon : Types.tyCon
+  val exnITy : IDCalc.ty
+  val exnTy : Types.ty
+       
+  val exntagTstrInfo : tstrInfo
+  val exntagTyCon : Types.tyCon
+  val exntagITy : IDCalc.ty
+  val exntagTy : Types.ty
+       
+  val contagTstrInfo : tstrInfo
+  val contagTyCon : Types.tyCon
+  val contagITy : IDCalc.ty
+  val contagTy : Types.ty
+
+  val sizeTstrInfo : tstrInfo
+  val sizeTyCon : Types.tyCon
+  val sizeITy : IDCalc.ty
+  val sizeTy : Types.ty
+
+  val refTstrInfo : tstrInfo
+  val refTyCon : Types.tyCon
+  val refICConInfo : IDCalc.conInfo
+  val refTPConInfo : Types.conInfo
+
+  val boolTstrInfo : tstrInfo
+  val boolTyCon : Types.tyCon
+  val boolITy : IDCalc.ty
+  val boolTy : Types.ty
+  val trueICConInfo : IDCalc.conInfo
+  val trueTPConInfo : Types.conInfo
+  val falseTPConInfo : Types.conInfo
+
+  val listTstrInfo : tstrInfo
+  val listTyCon : Types.tyCon
+  val listTy : Types.ty
+  val consICConInfo : IDCalc.conInfo
+  val consTPConInfo : Types.conInfo
+  val nilICConInfo : IDCalc.conInfo
+  val nilTPConInfo : Types.conInfo
+
+  val optionTstrInfo : tstrInfo
+  val optionTyCon : Types.tyCon
+  val SOMEICConInfo : IDCalc.conInfo
+  val SOMETPConInfo : Types.conInfo
+  val NONEICConInfo : IDCalc.conInfo
+  val NONETPConInfo : Types.conInfo
+
+  val BindExExn : Types.exExnInfo
+  val MatchExExn : Types.exExnInfo
+  val SubscriptExExn : Types.exExnInfo
+  val SizeExExn : Types.exExnInfo
+  val OverflowExExn : Types.exExnInfo
+  val DivExExn : Types.exExnInfo
+  val DomainExExn : Types.exExnInfo
+  val FailExExn : Types.exExnInfo
+  val ChrExExn : Types.exExnInfo
+
+end

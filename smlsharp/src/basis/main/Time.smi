@@ -1,0 +1,37 @@
+_require       "./General.smi"
+_require local "./IEEEReal.smi"
+_require       "./IntInf.smi"
+_require       "./Real64.smi"
+_require local "./SMLSharp_Runtime.smi"
+_require local "./SMLSharp_ScanChar.smi"
+_require local "./String.smi"
+_require       "./StringCvt.smi"
+
+structure Time =
+struct
+  eqtype time (= intInf)
+  exception Time
+  val zeroTime : time
+  val fromReal : LargeReal.real -> time
+  val toReal : time -> LargeReal.real
+  val toSeconds : time -> LargeInt.int
+  val toMilliseconds : time -> LargeInt.int
+  val toMicroseconds : time -> LargeInt.int
+  val toNanoseconds : time -> LargeInt.int
+  val fromSeconds : LargeInt.int -> time
+  val fromMilliseconds : LargeInt.int -> time
+  val fromMicroseconds : LargeInt.int -> time
+  val fromNanoseconds : LargeInt.int -> time
+  val + : time * time -> time
+  val - : time * time -> time
+  val compare : time * time -> General.order
+  val < : time * time -> bool
+  val <= : time * time -> bool
+  val > : time * time -> bool
+  val >= : time * time -> bool
+  val now : unit -> time
+  val fmt : int -> time -> string
+  val toString : time -> string
+  val scan : (char, 'a) StringCvt.reader -> (time, 'a) StringCvt.reader
+  val fromString : string -> time option
+end

@@ -1,0 +1,69 @@
+(* -*- sml -*- *)
+(**
+ * the output calculus of record layout computation
+ *
+ * @copyright (C) 2021 SML# Development Team.
+ * @author UENO Katsuhiro
+ *)
+structure RecordLayoutCalc =
+struct
+
+  (*%
+   * @formatter(Symbol.longsymbol) Symbol.format_longsymbol
+   * @formatter(VarID.id) VarID.format_id
+   *)
+  type var =
+      (*%
+       * @format({path, id}) path "(" id ")"
+       *)
+      {path : Symbol.longsymbol, id : VarID.id} (* word32 *)
+
+  (*%
+   * @formatter(Word32.word) SMLFormat.BasicFormatters.format_word
+   *)
+  datatype value =
+      (*%
+       * @format(x) x
+       *)
+      VAR of var
+    | (*%
+       * @format(x) x
+       *)
+      WORD of Word32.word
+
+  (*% *)
+  datatype op2 =
+      (*% @format "+" *)
+      ADD
+    | (*% @format "-" *)
+      SUB
+    | (*% @format "/" *)
+      DIV
+    | (*% @format "&" *)
+      AND
+    | (*% @format "|" *)
+      OR
+    | (*% @format "<<" *)
+      LSHIFT
+    | (*% @format ">>" *)
+      RSHIFT
+
+  (*% *)
+  datatype exp =
+      (*%
+       * @format(v) v
+       *)
+      VALUE of value
+    | (*%
+       * @format(op2 * (v1 * v2)) L0{ v1 +1 op2 +d v2 }
+       *)
+      OP of op2 * (value * value)
+
+  (*% *)
+  datatype dec =
+      (*%
+       * @format(var * exp) "val" +d var 1[ +1 "=" +d exp ]
+       *)
+      VAL of var * exp
+
+end

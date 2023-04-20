@@ -1,0 +1,524 @@
+(* -*- sml -*- *)
+(**
+ * built-in primitives.
+ * @copyright (C) 2021 SML# Development Team.
+ * @author UENO Katsuhiro
+ *)
+structure BuiltinPrimitive =
+struct
+
+  (*
+   * Note on difference between array, vector, string and ref.
+   *
+   * "array" is the very primitive type of array-like data structures;
+   * "vector", "string" and "ref" are variations of "array".
+   * Since their runtime data representations are essentially same, you can
+   * cast these types to each other.
+   *
+   * "vector" is same as "array" except for their object types indicated in
+   * the object header; a "vector" object is OBJTYPE_VECTOR whereas an
+   * "array" object is OBJTYPE_ARRAY.  This difference of object types
+   * affects only runtime equality check performed by RuntimePolyEqual
+   * primitive.
+   *
+   * "string" is same as "char vector" or ("word8 vector") except that the
+   * last element of a "string" object is always the sentinel "\0" character.
+   * A "string" object of N-characters consists of (N+1) elements as a
+   * "vector" object.
+   * The sentinel element is hidden from users; for example, String_size
+   * primitive returns the number of elements except for the sentinel, and 
+   * String_sub primitive raises Subscript exception if the user tries to
+   * read the sentinel.
+   *
+   * "ref" is same as "array" of single element.
+   *)
+
+  (*
+   * Note on conversion between integers and floats.
+   *
+   * Each primitive of the following families corresponds to an LLVM
+   * instruction:
+   *   - Word<M>_toWord<N>X       : word<M> -> word<N>  (M < N; sign-extend)
+   *   - Word<M>_toWord<N>        : word<M> -> word<N>  (M < N; zero-extend)
+   *   - Word<M>_toWord<N>        : word<M> -> word<N>  (M > N; truncate)
+   *   - Int<M>_toReal<N>         : int<M> -> real<N>   (round against zero)
+   *   - Word<M>_toReal<N>        : word<M> -> real<N>  (round towards +Inf)
+   *   - Real<M>_toInt<N>_unsafe  : real<M> -> int<N>   (round towards zero)
+   *   - Real<M>_toWord<N>_unsafe : real<M> -> word<N>  (round towards zero)
+   *
+   * A *_unsafe primitive may fail (returns an undef in LLVM) if the given
+   * value does not fit in the value range of the target type.
+   * For example, Real64_toWord32_unsafe x may fail if x >= 2^32, x < 0, or
+   * x is NaN.
+   *
+   * We do not provide word-to-int or int-to-word conversion primitives
+   * for same size since they are same as type cast between int and word.
+   *
+   * We neither provide size conversion primitives for int types since
+   * each of them is equivalent to a composition of type casts and the above
+   * primitives.
+   *
+   * For efficiency, we provide
+   * - Word<N>_toInt32X (N <> 32), which is inline-expanded to a composition
+   *   of type cast and size conversion, and
+   * - {Word|Int}<N>_toInt32 and {Word|Int}<N>_fromInt32, each of which is
+   *   inline-expanded to code that checks whether or not the given value
+   *   fits in int32 before size conversion.
+   *
+   * We do not provide conversion primitives with range check for floating-
+   * point numbers.  Range check must be in the Basis Library implementation.
+   *)
+
+  (*
+   * Note on shift operators
+   *
+   * The semantics of LLVM shift instruction is different from the Basis
+   * Library manual in the following sence:
+   * 1. Both operands of a shift instruction must be same (ex. shl takes
+   *    two i8 value) whereas the type of shift count is always "word" in
+   *    the Basis Library regardless of word size (ex. Word8.<< : word8 *
+   *    word -> word8).
+   * 2. If a shift count is larger than the number of word bits, the result
+   *    of a shift instruction is undefined.
+   * Therefore,
+   * 1. Word<N>_<shift>_unsafe, which corresponds to a LLVM instruction, has
+   *    type word<N> * word<N> -> word<N>, not word<N> * word -> word<N>.
+   * 2. Word<N>_<shift> is provided for efficient implementation of Basis
+   *    Library functions.  It is inline-expanded to Word<N>_<shift>_unsafe
+   *    with range check of shift count.
+   *)
+
+  (* primitives compiled at code generation *)
+  (*% *)
+  datatype primitiveMachineCode =
+      (* true if two arguements (of any types) are identical *)
+      IdentityEqual         (* X * X -> bool; X must be an llvm intty *)
+    (* Int_* are overloaded for int types of all sizes *)
+    | Int_add_unsafe        (* intX * intX -> intX *)
+    | Int_gt                (* intX * intX -> bool *)
+    | Int_gteq              (* intX * intX -> bool *)
+    | Int_lt                (* intX * intX -> bool *)
+    | Int_lteq              (* intX * intX -> bool *)
+    | Int_mul_unsafe        (* intX * intX -> intX *)
+    | Int_quot_unsafe       (* intX * intX -> intX *)
+    | Int_rem_unsafe        (* intX * intX -> intX *)
+    | Int_sub_unsafe        (* intX * intX -> intX *)
+    | Int_add_overflowCheck (* intX * intX -> bool *)
+    | Int_mul_overflowCheck (* intX * intX -> bool *)
+    | Int_sub_overflowCheck (* intX * intX -> bool *)
+    | ObjectSize            (* X#boxed -> word32 *)
+    | Ptr_advance           (* 'a ptr * intX -> 'a ptr *)
+    | Ptr_fromWord          (* wordX -> 'a ptr *)
+    | Ptr_toWord            (* 'a ptr -> wordX *)
+    (* Real_* are overloaded for real types of all sizes *)
+    | Real_abs              (* realX -> realX *)
+    | Real_add              (* realX * realX -> realX *)
+    | Real_div              (* realX * realX -> realX *)
+    | Real_equal            (* realX * realX -> bool *)  (* Real.== *)
+    | Real_unorderedOrEqual (* realX * realX -> bool *)  (* Real.?= *)
+    | Real_gt               (* realX * realX -> bool *)
+    | Real_gteq             (* realX * realX -> bool *)
+    | Real_isNan            (* realX -> bool *)
+    | Real_lt               (* realX * realX -> bool *)
+    | Real_lteq             (* realX * realX -> bool *)
+    | Real_mul              (* realX * realX -> realX *)
+    | Real_rem              (* realX * realX -> realX *)
+    | Real_sub              (* realX * realX -> realX *)
+    | Real_fpext_fptrunc    (* realX -> realY; undefined if overflow *)
+    | Real_fptoui           (* realX -> wordY *)
+    | Real_fromInt          (* intX -> realY *)
+    | Real_trunc_unsafe     (* realX -> intY *)
+    | (* recursive memory comparison on heap data structures *)
+      RuntimePolyEqual      (* 'a * 'a -> bool *)
+    (* Word_* are overloaded for word types of all sizes *)
+    | Word_add              (* wordX * wordX -> wordX *)
+    | Word_andb             (* wordX * wordX -> wordX *)
+    | Word_arshift_unsafe   (* wordX * wordX -> wordX *)
+    | Word_div_unsafe       (* wordX * wordX -> wordX *)
+    | Word_gt               (* wordX * wordX -> bool *)
+    | Word_gteq             (* wordX * wordX -> bool *)
+    | Word_lshift_unsafe    (* wordX * wordX -> wordX *)
+    | Word_lt               (* wordX * wordX -> bool *)
+    | Word_lteq             (* wordX * wordX -> bool *)
+    | Word_mod_unsafe       (* wordX * wordX -> wordX *)
+    | Word_mul              (* wordX * wordX -> wordX *)
+    | Word_orb              (* wordX * wordX -> wordX *)
+    | Word_rshift_unsafe    (* wordX * wordX -> wordX *)
+    | Word_sub              (* wordX * wordX -> wordX *)
+    | Word_xorb             (* wordX * wordX -> wordX *)
+    | Word_zext_trunc       (* wordX or intX -> wordY or intY *)
+    | Word_sext_trunc       (* wordX or intX -> wordY or intY *)
+
+  (* primitives compiled at machine code generateion *)
+  (*% *)
+  datatype primitiveRuntimeCalc =
+      Array_alloc_unsafe    (* int32 -> 'a array *)
+    | Array_copy_unsafe     (* 'a array * int32 * 'a array * int32 * int32
+                                  -> unit *)
+    | Boxed_copy            (* boxed * word32 * boxed * word32 * word32
+                                  * word32 -> unit *)
+    | Boxed_deref           (* boxed * word32 -> X *)
+    | Boxed_store           (* boxed * word32 * X -> unit *)
+    | KeepAlive             (* 'a#boxed -> unit *)
+    | Record_alloc_unsafe   (* word32 * word32 -> boxed *)
+    | Vector_alloc_unsafe   (* int32 -> 'a vector *)
+    | (*% @format(x) x *)
+      M of primitiveMachineCode
+
+  (* primitives compiled at calling convention compile *)
+  (*% *)
+  datatype primitiveTypedLambda =
+      Array_alloc_init      (* 'a * ... * 'a -> 'a array; internal use *)
+    | Array_sub_unsafe      (* 'a array * int32 -> 'a *)
+    | Array_update_unsafe   (* 'a array * int32 * 'a -> unit *)
+    | Ptr_deref             (* 'a ptr -> 'a *)
+    | Ptr_store             (* 'a ptr * 'a -> unit *)
+    | Vector_alloc_init     (* 'a * ... * 'a -> 'a vector; internal use *)
+    | Vector_alloc_init_fresh (* same as Vector_alloc_init except that
+                                 always allocate a fresh object. *)
+    | (*% @format(x) x *)
+      R of primitiveRuntimeCalc
+
+  (*% *)
+  datatype cast =
+      BitCast               (* overloaded; backend type cast *)
+    | TypeCast              (* overloaded; frontend type cast *)
+
+  (* primitives compiled at datatype compilation *)
+  (*% *)
+  datatype primitive =
+      Array_alloc           (* int32 -> 'a array *)
+    | Array_copy            (* {di:int32, dst:'a array, src:'a array} -> unit *)
+    | Array_length          (* 'a array -> int32 *)
+    | Array_sub             (* 'a array * int32 -> 'a *)
+    | Array_update          (* 'a array * int32 * 'a -> unit *)
+    | Before                (* 'a * unit -> 'a *)
+    | Boxed_null            (* unit -> boxed *)
+    | (*% @format(x) x *)
+      Cast of cast          (* type cast *)
+    | Char_chr              (* intX -> char *)
+    | Char_gt               (* char * char -> bool *)
+    | Char_gteq             (* char * char -> bool *)
+    | Char_lt               (* char * char -> bool *)
+    | Char_lteq             (* char * char -> bool *)
+    | Char_ord              (* char -> intX *)
+    | Compose               (* ('a -> 'b) * ('c -> 'a) -> ('c -> 'b) *)
+    | Equal                 (* [''a.''a * ''a -> bool] *)  (* SML = operator *)
+    | NotEqual              (* [''a.''a * ''a -> bool] *)
+    | Ignore                (* 'a -> unit *)
+    | Int_abs               (* intX -> intX *)
+    | Int_add               (* intX * intX -> intX *)
+    | Int_div               (* intX * intX -> intX *)
+    | Int_mod               (* intX * intX -> intX *)
+    | Int_mul               (* intX * intX -> intX *)
+    | Int_neg               (* intX -> intX *)
+    | Int_quot              (* intX * intX -> intX *)
+    | Int_rem               (* intX * intX -> intX *)
+    | Int_sub               (* intX * intX -> intX *)
+    | Int_toInt             (* intX -> intY *)
+    | Ptr_null              (* unit -> 'a ptr *)
+    | Real_neg              (* realX -> realX *)
+    | Real_notEqual         (* realX * realX -> bool *)
+    | Real_trunc            (* realX -> intY *)
+    | Ref_assign            (* 'a ref * 'a -> unit *)
+    | Ref_deref             (* 'a ref -> 'a *)
+    | String_alloc          (* int32 -> string *)
+    | String_alloc_unsafe   (* int32 -> string *)
+    | String_size           (* string -> int32 *)
+    | String_sub            (* string * int32 -> char *)
+    | Vector_alloc          (* int32 -> 'a vector *)
+    | Vector_length         (* 'a vector -> int32 *)
+    | Vector_sub            (* 'a vector * int32 -> 'a *)
+    | Word_arshift          (* wordX * wordY -> wordX *)
+    | Word_div              (* wordX * wordX -> wordX *)
+    | Word_fromInt          (* intX -> wordY *)
+    | Word_lshift           (* wordX * wordY -> wordX *)
+    | Word_mod              (* wordX * wordX -> wordX *)
+    | Word_neg              (* wordX -> wordX *)
+    | Word_notb             (* wordX -> wordX *)
+    | Word_rshift           (* wordX * wordY -> wordX *)
+    | Word_toInt            (* wordX -> intY *)
+    | Word_toIntX           (* wordX -> intY *)
+    | (*% @format(x) x *)
+      L of primitiveTypedLambda
+
+  (* "read" is not actually an effect, but primitives whose "read" is true
+   * have control dependencies on those which have "update" effect. *)
+  type sideEffect =
+      {
+        throw : bool,       (* may raise exception *)
+        read : bool,        (* may read data from mutable memory *)
+        update : bool,      (* may destructively update memory *)
+        memory : bool       (* may allocate mutable memory *)
+      }
+
+  local
+    val none : sideEffect =
+        {memory = false, update = false, read = false, throw = false}
+    val memory : sideEffect =
+        {memory = true, update = false, read = false, throw = false}
+    val update : sideEffect =
+        {memory = false, update = true, read = false, throw = false}
+    val read : sideEffect =
+        {memory = false, update = false, read = true, throw = false}
+    val throw : sideEffect =
+        {memory = false, update = false, read = false, throw = true}
+    val update_or_read : sideEffect =
+        {memory = false, update = true, read = true, throw = false}
+    val throw_or_memory : sideEffect =
+        {memory = true, update = false, read = false, throw = true}
+    val throw_or_update : sideEffect =
+        {memory = false, update = true, read = false, throw = true}
+    val throw_or_read : sideEffect =
+        {memory = false, update = false, read = true, throw = true}
+    val throw_update_or_read : sideEffect =
+        {memory = false, update = true, read = true, throw = true}
+  in
+
+  fun haveSideEffect prim =
+      case prim of
+        L (R (M IdentityEqual)) => none
+      | L (R (M Int_add_unsafe)) => none (* does not raise Overflow *)
+      | L (R (M Int_gt)) => none
+      | L (R (M Int_gteq)) => none
+      | L (R (M Int_lt)) => none
+      | L (R (M Int_lteq)) => none
+      | L (R (M Int_mul_unsafe)) => none (* does not raise Overflow *)
+      | L (R (M Int_quot_unsafe)) => none (* does not raise Div, Overflow *)
+      | L (R (M Int_rem_unsafe)) => none (* does not raise Div, Overflow *)
+      | L (R (M Int_sub_unsafe)) => none (* does not raise Overflow *)
+      | L (R (M Int_add_overflowCheck)) => none
+      | L (R (M Int_mul_overflowCheck)) => none
+      | L (R (M Int_sub_overflowCheck)) => none
+      | L (R (M ObjectSize)) => none
+      | L (R (M Ptr_advance)) => none
+      | L (R (M Ptr_fromWord)) => none
+      | L (R (M Ptr_toWord)) => none
+      | L (R (M Real_abs)) => none
+      | L (R (M Real_add)) => none
+      | L (R (M Real_div)) => none
+      | L (R (M Real_equal)) => none
+      | L (R (M Real_unorderedOrEqual)) => none
+      | L (R (M Real_gt)) => none
+      | L (R (M Real_gteq)) => none
+      | L (R (M Real_isNan)) => none
+      | L (R (M Real_lt)) => none
+      | L (R (M Real_lteq)) => none
+      | L (R (M Real_mul)) => none
+      | L (R (M Real_rem)) => none
+      | L (R (M Real_sub)) => none
+      | L (R (M Real_fpext_fptrunc)) => none
+      | L (R (M Real_fptoui)) => none  (* not raise Domain,Overflow *)
+      | L (R (M Real_fromInt)) => none
+      | L (R (M Real_trunc_unsafe)) => none  (* not raise Domain,Overflow *)
+      | L (R (M RuntimePolyEqual)) => none
+      | L (R (M Word_add)) => none
+      | L (R (M Word_andb)) => none
+      | L (R (M Word_arshift_unsafe)) => none
+      | L (R (M Word_div_unsafe)) => none
+      | L (R (M Word_gt)) => none
+      | L (R (M Word_gteq)) => none
+      | L (R (M Word_lshift_unsafe)) => none
+      | L (R (M Word_lt)) => none
+      | L (R (M Word_lteq)) => none
+      | L (R (M Word_mod_unsafe)) => none
+      | L (R (M Word_mul)) => none
+      | L (R (M Word_orb)) => none
+      | L (R (M Word_rshift_unsafe)) => none
+      | L (R (M Word_sub)) => none
+      | L (R (M Word_xorb)) => none
+      | L (R (M Word_zext_trunc)) => none
+      | L (R (M Word_sext_trunc)) => none
+      | L (R Array_alloc_unsafe) => memory (* does not raise Size *)
+      | L (R Array_copy_unsafe) => update_or_read (* does not raise Subscript *)
+      | L (R Boxed_copy) => memory
+      | L (R Boxed_deref) => read
+      | L (R Boxed_store) => update
+      | L (R KeepAlive) => none
+      | L (R Record_alloc_unsafe) => memory (* does not raise Size *)
+      | L (R Vector_alloc_unsafe) => memory (* does not raise Size *)
+      | L Array_alloc_init => memory (* does not raise Size *)
+      | L Array_sub_unsafe => read (* does not raise Subscript *)
+      | L Array_update_unsafe => update (* does not raise Subscript *)
+      | L Ptr_deref => read
+      | L Ptr_store => update
+      | L Vector_alloc_init => memory (* does not raise Size *)
+      | L Vector_alloc_init_fresh => memory (* does not raise Size *)
+      | Array_alloc => throw_or_memory (* Size *)
+      | Array_copy => throw_update_or_read (* Subscript *)
+      | Array_length => none
+      | Array_sub => throw_or_read (* Subscript *)
+      | Array_update => throw_or_update (* Subscript *)
+      | Before => none
+      | Boxed_null => none
+      | Cast BitCast => none
+      | Cast TypeCast => none
+      | Char_chr => throw (* Chr *)
+      | Char_gt => none
+      | Char_gteq => none
+      | Char_lt => none
+      | Char_lteq => none
+      | Char_ord => none
+      | Compose => none
+      | Equal => none
+      | NotEqual => none
+      | Ignore => none
+      | Int_abs => throw (* Overflow *)
+      | Int_add => throw (* Overflow *)
+      | Int_div => throw (* Div, Overflow *)
+      | Int_mod => throw (* Div, Overflow *)
+      | Int_mul => throw (* Overflow *)
+      | Int_neg => throw (* Overflow *)
+      | Int_quot => throw (* Overflow *)
+      | Int_rem => throw (* Overflow *)
+      | Int_sub => throw (* Overflow *)
+      | Int_toInt => throw (* Overflow *)
+      | Ptr_null => none
+      | Real_neg => none
+      | Real_notEqual => none
+      | Real_trunc => throw (* Domain, Overflow *)
+      | Ref_assign => update
+      | Ref_deref => read
+      | String_alloc => throw_or_memory (* Size *)
+      | String_alloc_unsafe => memory
+      | String_size => none
+      | String_sub => throw_or_read (* Subscript *)
+      | Vector_alloc => throw_or_memory (* Size *)
+      | Vector_length => none
+      | Vector_sub => throw_or_read (* Subscript *)
+      | Word_arshift => none
+      | Word_div => throw (* Div *)
+      | Word_fromInt => none
+      | Word_lshift => none
+      | Word_mod => throw (* Div *)
+      | Word_neg => none
+      | Word_notb => none
+      | Word_rshift => none
+      | Word_toInt => none (* never Overflow *)
+      | Word_toIntX => none (* never Overflow *)
+  end (* local *)
+
+  fun findPrimitive name =
+      case name of
+        "IdentityEqual" => SOME (L (R (M IdentityEqual)))
+      | "Int_add_unsafe" => SOME (L (R (M Int_add_unsafe)))
+      | "Int_gt" => SOME (L (R (M Int_gt)))
+      | "Int_gteq" => SOME (L (R (M Int_gteq)))
+      | "Int_lt" => SOME (L (R (M Int_lt)))
+      | "Int_lteq" => SOME (L (R (M Int_lteq)))
+      | "Int_mul_unsafe" => SOME (L (R (M Int_mul_unsafe)))
+      | "Int_quot_unsafe" => SOME (L (R (M Int_quot_unsafe)))
+      | "Int_rem_unsafe" => SOME (L (R (M Int_rem_unsafe)))
+      | "Int_sub_unsafe" => SOME (L (R (M Int_sub_unsafe)))
+      | "Int_add_overflowCheck" => SOME (L (R (M Int_add_overflowCheck)))
+      | "Int_mul_overflowCheck" => SOME (L (R (M Int_mul_overflowCheck)))
+      | "Int_sub_overflowCheck" => SOME (L (R (M Int_sub_overflowCheck)))
+      | "ObjectSize" => SOME (L (R (M ObjectSize)))
+      | "Ptr_advance" => SOME (L (R (M Ptr_advance)))
+      | "Ptr_fromWord" => SOME (L (R (M Ptr_fromWord)))
+      | "Ptr_toWord" => SOME (L (R (M Ptr_toWord)))
+      | "Real_abs" => SOME (L (R (M Real_abs)))
+      | "Real_add" => SOME (L (R (M Real_add)))
+      | "Real_div" => SOME (L (R (M Real_div)))
+      | "Real_equal" => SOME (L (R (M Real_equal)))
+      | "Real_unorderedOrEqual" => SOME (L (R (M Real_unorderedOrEqual)))
+      | "Real_gt" => SOME (L (R (M Real_gt)))
+      | "Real_gteq" => SOME (L (R (M Real_gteq)))
+      | "Real_isNan" => SOME (L (R (M Real_isNan)))
+      | "Real_lt" => SOME (L (R (M Real_lt)))
+      | "Real_lteq" => SOME (L (R (M Real_lteq)))
+      | "Real_mul" => SOME (L (R (M Real_mul)))
+      | "Real_rem" => SOME (L (R (M Real_rem)))
+      | "Real_sub" => SOME (L (R (M Real_sub)))
+      | "Real_fpext_fptrunc" => SOME (L (R (M Real_fpext_fptrunc)))
+      | "Real_fptoui" => SOME (L (R (M Real_fptoui)))
+      | "Real_fromInt" => SOME (L (R (M Real_fromInt)))
+      | "Real_trunc_unsafe" => SOME (L (R (M Real_trunc_unsafe)))
+      | "RuntimePolyEqual" => SOME (L (R (M RuntimePolyEqual)))
+      | "Word_add" => SOME (L (R (M Word_add)))
+      | "Word_andb" => SOME (L (R (M Word_andb)))
+      | "Word_arshift_unsafe" => SOME (L (R (M Word_arshift_unsafe)))
+      | "Word_div_unsafe" => SOME (L (R (M Word_div_unsafe)))
+      | "Word_gt" => SOME (L (R (M Word_gt)))
+      | "Word_gteq" => SOME (L (R (M Word_gteq)))
+      | "Word_lshift_unsafe" => SOME (L (R (M Word_lshift_unsafe)))
+      | "Word_lt" => SOME (L (R (M Word_lt)))
+      | "Word_lteq" => SOME (L (R (M Word_lteq)))
+      | "Word_mod_unsafe" => SOME (L (R (M Word_mod_unsafe)))
+      | "Word_mul" => SOME (L (R (M Word_mul)))
+      | "Word_orb" => SOME (L (R (M Word_orb)))
+      | "Word_rshift_unsafe" => SOME (L (R (M Word_rshift_unsafe)))
+      | "Word_sub" => SOME (L (R (M Word_sub)))
+      | "Word_xorb" => SOME (L (R (M Word_xorb)))
+      | "Word_zext_trunc" => SOME (L (R (M Word_zext_trunc)))
+      | "Word_sext_trunc" => SOME (L (R (M Word_sext_trunc)))
+      | "Array_alloc_unsafe" => SOME (L (R Array_alloc_unsafe))
+      | "Array_copy_unsafe" => SOME (L (R Array_copy_unsafe))
+      | "Boxed_copy" => SOME (L (R Boxed_copy))
+      | "Boxed_deref" => SOME (L (R Boxed_deref))
+      | "Boxed_store" => SOME (L (R Boxed_store))
+      | "KeepAlive" => SOME (L (R KeepAlive))
+      | "Record_alloc_unsafe" => SOME (L (R Record_alloc_unsafe))
+      | "Vector_alloc_unsafe" => SOME (L (R Vector_alloc_unsafe))
+      | "Array_alloc_init" => SOME (L Array_alloc_init)
+      | "Array_sub_unsafe" => SOME (L Array_sub_unsafe)
+      | "Array_update_unsafe" => SOME (L Array_update_unsafe)
+      | "Ptr_deref" => SOME (L Ptr_deref)
+      | "Ptr_store" => SOME (L Ptr_store)
+      | "Vector_alloc_init" => SOME (L Vector_alloc_init)
+      | "Vector_alloc_init_fresh" => SOME (L Vector_alloc_init_fresh)
+      | "Array_alloc" => SOME Array_alloc
+      | "Array_copy" => SOME Array_copy
+      | "Array_length" => SOME Array_length
+      | "Array_sub" => SOME Array_sub
+      | "Array_update" => SOME Array_update
+      | "Before" => SOME Before
+      | "Boxed_null" => SOME Boxed_null
+      | "BitCast" => SOME (Cast BitCast)
+      | "TypeCast" => SOME (Cast TypeCast)
+      | "Char_chr" => SOME Char_chr
+      | "Char_gt" => SOME Char_gt
+      | "Char_gteq" => SOME Char_gteq
+      | "Char_lt" => SOME Char_lt
+      | "Char_lteq" => SOME Char_lteq
+      | "Char_ord" => SOME Char_ord
+      | "Compose" => SOME Compose
+      | "Equal" => SOME Equal
+      | "NotEqual" => SOME NotEqual
+      | "Ignore" => SOME Ignore
+      | "Int_abs" => SOME Int_abs
+      | "Int_add" => SOME Int_add
+      | "Int_div" => SOME Int_div
+      | "Int_mod" => SOME Int_mod
+      | "Int_mul" => SOME Int_mul
+      | "Int_neg" => SOME Int_neg
+      | "Int_quot" => SOME Int_quot
+      | "Int_rem" => SOME Int_rem
+      | "Int_sub" => SOME Int_sub
+      | "Int_toInt" => SOME Int_toInt
+      | "Ptr_null" => SOME Ptr_null
+      | "Real_neg" => SOME Real_neg
+      | "Real_notEqual" => SOME Real_notEqual
+      | "Real_trunc" => SOME Real_trunc
+      | "Ref_assign" => SOME Ref_assign
+      | "Ref_deref" => SOME Ref_deref
+      | "String_alloc" => SOME String_alloc
+      | "String_alloc_unsafe" => SOME String_alloc_unsafe
+      | "String_size" => SOME String_size
+      | "String_sub" => SOME String_sub
+      | "Vector_alloc" => SOME Vector_alloc
+      | "Vector_length" => SOME Vector_length
+      | "Vector_sub" => SOME Vector_sub
+      | "Word_arshift" => SOME Word_arshift
+      | "Word_div" => SOME Word_div
+      | "Word_fromInt" => SOME Word_fromInt
+      | "Word_lshift" => SOME Word_lshift
+      | "Word_mod" => SOME Word_mod
+      | "Word_neg" => SOME Word_neg
+      | "Word_notb" => SOME Word_notb
+      | "Word_rshift" => SOME Word_rshift
+      | "Word_toInt" => SOME Word_toInt
+      | "Word_toIntX" => SOME Word_toIntX
+      | _ => NONE
+
+end

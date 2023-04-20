@@ -1,0 +1,27 @@
+_require "../../../basis.smi"
+_require local "./BASIC_FORMATTERS.sig"
+_require "./FormatExpression.smi"
+
+structure BasicFormatters =
+struct
+  type format = FormatExpression.expression list
+  type 'a formatter = 'a -> format
+  val format_unit : unit -> format
+  val format_int : int -> format
+  val format_word : word -> format
+  val format_real : real -> format
+  val format_char : char -> format
+  val format_string : string -> format
+  val format_substring : substring -> format
+  val format_exn : exn -> format
+  val format_exn_Ref : (exn -> format) ref
+  val format_array :
+      ('a formatter * format) -> 'a array -> format
+  val format_vector :
+      ('a formatter * format) -> 'a vector -> format
+  val format_ref : 'a formatter -> 'a ref -> format
+  val format_bool : bool -> format
+  val format_option : 'a formatter -> 'a option -> format
+  val format_order : order -> format
+  val format_list : ('a formatter * format) -> 'a list -> format
+end
