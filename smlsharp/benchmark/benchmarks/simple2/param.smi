@@ -1,5 +1,0 @@
-structure Param =
-struct
-  val grid_max : int
-  val step_count : int
-end

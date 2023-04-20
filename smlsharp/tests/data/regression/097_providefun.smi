@@ -1,7 +1,0 @@
-functor F (
-  A : sig
-    val x : int
-  end
-) =
-struct
-end

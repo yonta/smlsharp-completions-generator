@@ -1,8 +1,0 @@
-_require "basis.smi"
-_require "smlunit-lib.smi"
-_require "Dictionary.smi"
-
-structure TestDictionary =
-struct
-  val suite : unit -> SMLUnit.Test.test
-end

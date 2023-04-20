@@ -1,7 +1,0 @@
-_require local "../../../../smlformat-lib.smi"
-_require local "../../../../basis.smi"
-
-structure ConstantError =
-struct
-  exception TooLargeConstant
-end

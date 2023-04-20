@@ -1,9 +1,0 @@
-functor F (
-  A : sig
-    type t
-  end
-) =
-struct
-  type 'a map (= boxed)
-  val empty : 'a map
-end

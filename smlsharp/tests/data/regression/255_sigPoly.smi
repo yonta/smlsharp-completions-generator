@@ -1,4 +1,0 @@
-structure A =
-struct
-   val f : ['a. 'a -> ['b#{a: 'c}, 'c. 'b -> 'a * 'c]]
-end

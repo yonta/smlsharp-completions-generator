@@ -1,5 +1,0 @@
-functor F (A : sig end) =
-struct
-  type t (= boxed)
-  val f : t -> int
-end

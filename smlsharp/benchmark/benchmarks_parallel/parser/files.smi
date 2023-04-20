@@ -1,2 +1,0 @@
-_require local "../../../src/basis.smi"
-val files : string vector

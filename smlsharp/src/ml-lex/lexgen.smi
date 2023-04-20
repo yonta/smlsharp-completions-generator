@@ -1,5 +1,0 @@
-_require local "../basis.smi"
-structure LexGen =
-struct
-  val lexGen : string option -> string -> unit
-end

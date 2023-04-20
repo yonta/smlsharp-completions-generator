@@ -1,2 +1,0 @@
-_use local "./051_use2.use"
-val x : int

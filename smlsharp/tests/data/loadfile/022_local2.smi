@@ -1,2 +1,0 @@
-_require local "./022_local4.smi"
-val y : int

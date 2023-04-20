@@ -1,6 +1,0 @@
-_require "./369_duplicateInterface2.smi"
-val y : int
-structure A = 
-struct
-  val x : int
-end

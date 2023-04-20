@@ -1,4 +1,0 @@
-structure S =
-struct
-  val f : 'a -> 'a
-end

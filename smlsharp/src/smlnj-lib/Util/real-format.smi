@@ -1,8 +1,0 @@
-_require "../../basis.smi"
-
-structure RealFormat =
-struct
-  val realFFormat : real * int -> {sign : bool, mantissa : string}
-  val realEFormat : real * int -> {sign : bool, mantissa : string, exp : int}
-  val realGFormat : real * int -> {sign : bool, whole : string, frac : string, exp : int option}
-end

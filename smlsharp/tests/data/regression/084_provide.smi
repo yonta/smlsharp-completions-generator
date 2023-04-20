@@ -1,4 +1,0 @@
-structure S =
-struct
-  eqtype t (= string)
-end

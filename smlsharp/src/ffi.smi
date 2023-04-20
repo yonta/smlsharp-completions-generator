@@ -1,2 +1,0 @@
-include "./ffi/main/DynamicLink.smi"
-include "./ffi/main/Pointer.smi"

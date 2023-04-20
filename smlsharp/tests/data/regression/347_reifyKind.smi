@@ -1,3 +1,0 @@
-_require "basis.smi"
-_require "reify.smi"
-_require "./347_reifyKind2.smi"

@@ -1,1 +1,0 @@
-CGIMain.main ();

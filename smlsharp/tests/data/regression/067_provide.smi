@@ -1,2 +1,0 @@
-_require "067_provide2.smi"
-type 'a t2 = 'a t

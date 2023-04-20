@@ -1,3 +1,0 @@
-val x : int * string
-val y : int * bool
-

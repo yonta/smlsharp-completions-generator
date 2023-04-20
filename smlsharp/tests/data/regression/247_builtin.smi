@@ -1,5 +1,0 @@
-functor F (X : sig end) =
-struct
-  val toIntX = SMLSharp_Builtin.Word32.toInt32X
-  val foo : word -> int
-end

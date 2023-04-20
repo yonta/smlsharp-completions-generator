@@ -1,3 +1,0 @@
-_require local "./022_local2.smi"
-_require "./022_local3.smi"
-val x : int * int

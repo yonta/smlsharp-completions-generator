@@ -1,4 +1,0 @@
-_require "basis.smi"
-_require "reify.smi"
-
-val f : 'a -> Dynamic.void Dynamic.dyn
