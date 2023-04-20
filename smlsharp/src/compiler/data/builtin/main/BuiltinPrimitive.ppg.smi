@@ -1,0 +1,147 @@
+(* _require local "../../../../basis.smi" *)
+_require "../../../../smlformat-lib.smi"
+_require "../../symbols/main/Loc.smi"
+
+structure BuiltinPrimitive =
+struct
+  datatype primitiveMachineCode =
+      IdentityEqual
+    | Int_add_unsafe
+    | Int_gt
+    | Int_gteq
+    | Int_lt
+    | Int_lteq
+    | Int_mul_unsafe
+    | Int_quot_unsafe
+    | Int_rem_unsafe
+    | Int_sub_unsafe
+    | Int_add_overflowCheck
+    | Int_mul_overflowCheck
+    | Int_sub_overflowCheck
+    | ObjectSize
+    | Ptr_advance
+    | Ptr_fromWord
+    | Ptr_toWord
+    | Real_abs
+    | Real_add
+    | Real_div
+    | Real_equal
+    | Real_unorderedOrEqual
+    | Real_gt
+    | Real_gteq
+    | Real_isNan
+    | Real_lt
+    | Real_lteq
+    | Real_mul
+    | Real_rem
+    | Real_sub
+    | Real_fpext_fptrunc
+    | Real_fptoui
+    | Real_fromInt
+    | Real_trunc_unsafe
+    | RuntimePolyEqual
+    | Word_add
+    | Word_andb
+    | Word_arshift_unsafe
+    | Word_div_unsafe
+    | Word_gt
+    | Word_gteq
+    | Word_lshift_unsafe
+    | Word_lt
+    | Word_lteq
+    | Word_mod_unsafe
+    | Word_mul
+    | Word_orb
+    | Word_rshift_unsafe
+    | Word_sub
+    | Word_xorb
+    | Word_zext_trunc
+    | Word_sext_trunc
+  datatype primitiveRuntimeCalc =
+      Array_alloc_unsafe
+    | Array_copy_unsafe
+    | Boxed_copy
+    | Boxed_deref
+    | Boxed_store
+    | KeepAlive
+    | Record_alloc_unsafe
+    | Vector_alloc_unsafe
+    | M of primitiveMachineCode
+  datatype primitiveTypedLambda =
+      Array_alloc_init
+    | Array_sub_unsafe
+    | Array_update_unsafe
+    | Ptr_deref
+    | Ptr_store
+    | Vector_alloc_init
+    | Vector_alloc_init_fresh
+    | R of primitiveRuntimeCalc
+  datatype cast =
+      BitCast
+    | TypeCast
+  datatype primitive =
+      Array_alloc
+    | Array_copy
+    | Array_length
+    | Array_sub
+    | Array_update
+    | Before
+    | Boxed_null
+    | Cast of cast
+    | Char_chr
+    | Char_gt
+    | Char_gteq
+    | Char_lt
+    | Char_lteq
+    | Char_ord
+    | Compose
+    | Equal
+    | NotEqual
+    | Ignore
+    | Int_abs
+    | Int_add
+    | Int_div
+    | Int_mod
+    | Int_mul
+    | Int_neg
+    | Int_quot
+    | Int_rem
+    | Int_sub
+    | Int_toInt
+    | Ptr_null
+    | Real_neg
+    | Real_notEqual
+    | Real_trunc
+    | Ref_assign
+    | Ref_deref
+    | String_alloc
+    | String_alloc_unsafe
+    | String_size
+    | String_sub
+    | Vector_alloc
+    | Vector_length
+    | Vector_sub
+    | Word_arshift
+    | Word_div
+    | Word_fromInt
+    | Word_lshift
+    | Word_mod
+    | Word_neg
+    | Word_notb
+    | Word_rshift
+    | Word_toInt
+    | Word_toIntX
+    | L of primitiveTypedLambda
+  val format_primitiveTypedLambda
+      : primitiveTypedLambda -> SMLFormat.FormatExpression.expression list
+  val format_primitiveRuntimeCalc
+      : primitiveRuntimeCalc -> SMLFormat.FormatExpression.expression list
+  val format_primitiveMachineCode
+      : primitiveMachineCode -> SMLFormat.FormatExpression.expression list
+  val format_primitive
+      : primitive -> SMLFormat.FormatExpression.expression list
+  val format_cast : cast -> SMLFormat.FormatExpression.expression list
+  type sideEffect = {throw: bool, update: bool, read: bool, memory: bool}
+  val haveSideEffect : primitive -> sideEffect
+  val findPrimitive : string -> primitive option
+end

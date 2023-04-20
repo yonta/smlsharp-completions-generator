@@ -1,0 +1,26 @@
+_require "../../../../basis.smi"
+_require local "../../../extensions/debug/main/Bug.smi"
+
+_require local "./Graph.smi"
+
+functor SCCFun(IMap :
+  sig
+    structure Key :
+      sig
+        type ord_key
+      end
+    type 'a map
+    val empty : 'a map
+    val insert  : 'a map * Key.ord_key * 'a -> 'a map
+    val find : 'a map * Key.ord_key -> 'a option
+  end
+)
+ =
+struct
+  type elem = IMap.Key.ord_key
+  type graph (= *)
+  val empty : graph
+  val addNode : graph * elem -> graph
+  val addEdge : graph * elem * elem -> graph
+  val scc : graph -> elem list list
+end

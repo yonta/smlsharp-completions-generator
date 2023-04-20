@@ -1,0 +1,23 @@
+structure General =
+struct
+  exception Bind = Bind
+  exception Match = Match
+  exception Chr = Chr
+  exception Div = Div
+  exception Domain = Domain
+  exception Fail = Fail
+  exception Overflow = Overflow
+  exception Size = Size
+  exception Span
+  exception Subscript = Subscript
+  val exnName : exn -> string
+  val exnMessage : exn -> string
+  datatype order = EQUAL | GREATER | LESS
+  val ! = SMLSharp_Builtin.General.!
+  val := = SMLSharp_Builtin.General.:=
+  val o = SMLSharp_Builtin.General.o
+  val before = SMLSharp_Builtin.General.before
+  val ignore = SMLSharp_Builtin.General.ignore
+  type unit = unit
+  type exn = exn
+end

@@ -1,0 +1,13 @@
+(* -*- sml -*- *)
+(**
+ * version information and default settings
+ *
+ * @copyright (C) 2021 SML# Development Team.
+ * @author UENO Katsuhiro
+ *)
+
+structure SMLSharp_Version =
+struct
+  val Release = "%RELEASE%"
+  val DefaultSystemBaseDir = "%LIBDIR_SMLSHARP%"
+end

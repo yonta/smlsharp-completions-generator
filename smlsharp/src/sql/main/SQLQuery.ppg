@@ -1,0 +1,432 @@
+(* -*- sml -*- *)
+(**
+ * SQL Query
+ * @author UENO Katsuhiro
+ * @copyright (C) 2021 SML# Development Team.
+ *)
+
+structure SMLSharp_SQL_Query =
+struct
+
+  fun term s = [SMLFormat.FormatExpression.Term (size s, s)]
+
+  fun formatSQLID s =
+      term ("\"" ^ String.translate (fn #"\"" => "\"\"" | c => str c) s ^ "\"")
+
+  fun formatSQLString s =
+      term ("'" ^ String.translate
+                    (fn #"'" => "''" | #"\\" => "\\\\" | c => str c)
+                    s
+            ^ "'")
+
+  fun fixSign x = CharVector.map (fn #"~" => #"-" | c => c) x
+  fun formatInteger fmt x = term (fixSign (fmt StringCvt.DEC x))
+  fun formatSQLIntInf x = formatInteger IntInf.fmt x
+  fun formatSQLInt x = formatInteger Int.fmt x
+  fun formatSQLWord x = formatInteger Word.fmt x
+  fun formatSQLReal x = term (fixSign (Real.fmt (StringCvt.FIX (SOME 10)) x))
+  fun formatSQLReal32 x = term (fixSign (Real32.fmt (StringCvt.FIX (SOME 10)) x))
+  fun formatSQLChar x = formatSQLString (str x)
+  fun formatSQLBool true = term "TRUE" | formatSQLBool false = term "FALSE"
+  fun formatTimestamp x = term ("'" ^ (SMLSharp_SQL_TimeStamp.toString x) ^ "'")
+  fun formatNumeric x = term (fixSign (SMLSharp_SQL_Numeric.toString x))
+
+  fun iftrue (x,y) true = x
+    | iftrue (x,y) false = y
+  fun ifnone (x,y) NONE = x
+    | ifnone (x,y) (SOME _) = y
+  fun ifcons (x,y) (_ :: _) = x
+    | ifcons (x,y) nil = y
+
+  (*% @formatter(string) formatSQLID *)
+  type id =
+      (*% @format(x) x *)
+      string
+
+  (*% *)
+  type oper =
+      (*% @format(x) x *)
+      string
+
+  (*% *)
+  datatype 'w ascdesc_ast =
+      (*% @format "ASC" *)
+      ASC
+    | (*% @format "DESC" *)
+      DESC
+
+  (*% *)
+  datatype 'w distinct_ast =
+      (*% @format "ALL" *)
+      ALL
+    | (*% @format "DISTINCT" *)
+      DISTINCT
+
+  datatype 'w db =
+      DB
+
+  (*% *)
+  datatype 'w table_id =
+      (*% @format(db * id) id *)
+      TABLEID of 'w db * id
+
+  (*%
+   * @formatter(int) formatSQLInt
+   * @formatter(intInf) formatSQLIntInf
+   * @formatter(word) formatSQLWord
+   * @formatter(real) formatSQLReal
+   * @formatter(real32) formatSQLReal32
+   * @formatter(string) formatSQLString
+   * @formatter(char) formatSQLChar
+   * @formatter(bool) formatSQLBool
+   * @formatter(SMLSharp_SQL_TimeStamp.timestamp) formatTimestamp
+   * @formatter(SMLSharp_SQL_Numeric.num) formatNumeric
+   *)
+  (*% @prefix ifInt_
+   * @params(f)
+   *)
+  datatype const =
+      (*% @prefix format_ @format "NULL" *)
+      (*% @prefix ifInt_ @format *)
+      NULL
+    | (*% @prefix format_ @format(x) x *)
+      (*% @prefix ifInt_ @format f *)
+      INT of int
+    | (*% @prefix format_ @format(x) x *)
+      (*% @prefix ifInt_ @format f *)
+      WORD of word
+    | (*% @prefix format_ @format(x) x *)
+      (*% @prefix ifInt_ @format *)
+      REAL of real
+    | (*% @prefix format_ @format(x) x *)
+      (*% @prefix ifInt_ @format *)
+      REAL32 of real32
+    | (*% @prefix format_ @format(x) x *)
+      (*% @prefix ifInt_ @format *)
+      STRING of string
+    | (*% @prefix format_ @format(x) x *)
+      (*% @prefix ifInt_ @format *)
+      CHAR of char
+    | (*% @prefix format_ @format(x) x *)
+      (*% @prefix ifInt_ @format *)
+      BOOL of bool
+    | (*% @prefix format_ @format(x) x *)
+      (*% @prefix ifInt_ @format f *)
+      INTINF of intInf
+    | (*% @prefix format_ @format(x) x *)
+      (*% @prefix ifInt_ @format *)
+      TIMESTAMP of SMLSharp_SQL_TimeStamp.timestamp
+    | (*% @prefix format_ @format(x) x *)
+      (*% @prefix ifInt_ @format *)
+      NUMERIC of SMLSharp_SQL_Numeric.num
+
+  (*% @prefix ifInt_
+   * @params(f)
+   *)
+  (*% @prefix format_
+   * @formatter(ifnone) ifnone
+   * @formatter(ifcons) ifcons
+   * @formatter(ifInt) ifInt_exp_ast
+   *)
+  datatype 'w exp_ast =
+      (*% @prefix format_ @format(x) x *)
+      (*% @prefix ifInt_ @format(c) c(f) *)
+      CONST of const
+    | (*% @prefix format_ @format(x) x *)
+      (*% @prefix ifInt_ @format *)
+      COLUMN1 of id
+    | (*% @prefix format_ @format(x * y) x "." y *)
+      (*% @prefix ifInt_ @format *)
+      COLUMN2 of id * id
+    | (*% @prefix format_
+       * @format(oper * w arg args)
+       * oper "(" !N0{ args(arg(w))("," +1) ")" }
+       *)
+      (*% @prefix ifInt_ @format *)
+      FUNCALL of oper * 'w exp_ast list
+    | (*% @prefix format_
+       * @format(w1 e1 * w2 e2)
+       * L1{ e1(w1) 2[ +1 "OR" +d e2(w2) ] }
+       *)
+      (*% @prefix ifInt_ @format *)
+      OR of 'w exp_ast * 'w exp_ast
+    | (*% @prefix format_
+       * @format(w1 e1 * w2 e2)
+       * L2{ e1(w1) 2[ +1 "AND" +d e2(w2) ] }
+       *)
+      (*% @prefix ifInt_ @format *)
+      AND of 'w exp_ast * 'w exp_ast
+    | (*% @prefix format_
+       * @format(w1 e1)
+       * N3{ "NOT" +d e1(w1) }
+       *)
+      (*% @prefix ifInt_ @format *)
+      NOT of 'w exp_ast
+    | (*% @prefix format_
+       * @format(w1 e1 * oper * w2 e2)
+       * N4{ e1(w1) 1[ +1 oper +d e2(w2) ] }
+       *)
+      (*% @prefix ifInt_ @format *)
+      CMPOP of 'w exp_ast * oper * 'w exp_ast
+    | (*% @prefix format_
+       * @format(w1 e1 * oper * w2 e2)
+       * N5{ e1(w1) 1[ +1 oper +d e2(w2) ] }
+       *)
+      (*% @prefix ifInt_ @format *)
+      ADDOP of 'w exp_ast * oper * 'w exp_ast
+    | (*% @prefix format_
+       * @format(w1 e1 * oper * w2 e2)
+       * N6{ e1(w1) 1[ +1 oper +d e2(w2) ] }
+       *)
+      (*% @prefix ifInt_ @format *)
+      MULOP of 'w exp_ast * oper * 'w exp_ast
+    | (*% @prefix format_
+       * @format(w1 e1 * oper * w2 e2)
+       * "(" !N0{ e1(w1) 1[ +1 oper +d e2(w2) ] ")" }
+       *)
+      (*% @prefix ifInt_ @format *)
+      OP2 of 'w exp_ast * oper * 'w exp_ast
+    | (*% @prefix format_
+       * @format(oper * w1 e1)
+       * N7{ oper e1(w1) }
+       *)
+      (*% @prefix ifInt_ @format *)
+      UNARYOP of oper * 'w exp_ast
+    | (*% @prefix format_
+       * @format(w1 e1 * oper)
+       * N4{ e1(w1) +d "IS" +d oper }
+       *)
+      (*% @prefix ifInt_ @format *)
+      IS of 'w exp_ast * oper
+    | (*% @prefix format_
+       * @format(w1 e1 * oper)
+       * N4{ e1(w1) +d "IS" +d +d "NOT" +d oper }
+       *)
+      (*% @prefix ifInt_ @format *)
+      IS_NOT of 'w exp_ast * oper
+    | (*% @prefix format_
+       * @format(w1 q1)
+       * N4{ "(" !N0{ q1(w1) ")" } }
+       *)
+      (*% @prefix ifInt_ @format *)
+      EXP_SUBQUERY of 'w query_ast
+    | (*% @prefix format_
+       * @format(w1 q1)
+       * N4{ "EXISTS(" !N0{ q1(w1) ")" } }
+       *)
+      (*% @prefix ifInt_ @format *)
+      EXISTS of 'w query_ast
+
+  and 'w table_ast =
+      (*% @prefix format_ @format(w t) t(w) *)
+      (*% @prefix ifInt_ @format *)
+      TABLE of 'w table_id
+    | (*% @prefix format_
+       * @format(w t * id)
+       * N2{ t(w) +1 "AS" +d id }
+       *)
+      (*% @prefix ifInt_ @format *)
+      TABLE_AS of 'w table_ast * id
+    | (*% @prefix format_
+       * @format(w q)
+       * "(" !N0{ q(w) ")" }
+       *)
+      (*% @prefix ifInt_ @format *)
+      TABLE_SUBQUERY of 'w query_ast
+    | (*% @prefix format_
+       * @format(w1 q1 * w2 q2 * w3 q3)
+       * L1{ q1(w1) +1 "JOIN" +d q2(w2) +2 "ON" +d q3(w3) }
+       *)
+      (*% @prefix ifInt_ @format *)
+      JOIN of 'w table_ast * 'w table_ast * 'w exp_ast
+    | (*% @prefix format_
+       * @format(w1 q1 * w2 q2 * w3 q3)
+       * L1{ q1(w1) +1 "INNER" +d "JOIN" +d q2(w2) +2 "ON" +d q3(w3) }
+       *)
+      (*% @prefix ifInt_ @format *)
+      INNERJOIN of 'w table_ast * 'w table_ast * 'w exp_ast
+    | (*% @prefix format_
+       * @format(w1 q1 * w2 q2)
+       * L1{ q1(w1) +1 "CROSS" +d "JOIN" +2 q2(w2) }
+       *)
+      (*% @prefix ifInt_ @format *)
+      CROSSJOIN of 'w table_ast * 'w table_ast
+    | (*% @prefix format_
+       * @format(w1 q1 * w2 q2)
+       * L1{ q1(w1) +1 "NATURAL" +d "JOIN" +2 q2(w2) }
+       *)
+      (*% @prefix ifInt_ @format *)
+      NATURALJOIN of 'w table_ast * 'w table_ast
+
+  and 'w select_ast =
+      (*% @prefix format_
+       * @format(w1 distinct opt1 * field fields)
+       * !N0{ "SELECT" opt1:ifnone()(,+d opt1(distinct(w1)))
+       *      2[ +1 fields(field)("," +1) ] }
+       * @format:field(id * w q)
+       * !N0{ q(w) 2[ +1 "AS" +d id ] }
+       *)
+      (*% @prefix ifInt_ @format *)
+      SELECT of 'w distinct_ast option * (id * 'w exp_ast) list
+
+  and 'w from_ast =
+      (*% @prefix format_
+       * @format(w t l)
+       * !N0{ "FROM" 2[ +1 l(t(w))("," +1) ] }
+       *)
+      (*% @prefix ifInt_ @format *)
+      FROM of 'w table_ast list
+
+  and 'w whr_ast =
+      (*% @prefix format_
+       * @format(w q)
+       * !N0{ "WHERE" 2[ +1 q(w) ] }
+       *)
+      (*% @prefix ifInt_ @format *)
+      WHERE of 'w exp_ast
+
+  and 'w groupby_ast =
+      (*% @prefix format_
+       * @format(w key keys * w having opt)
+       * !N0{ "GROUP" +d "BY" 2[ +1 keys:ifcons()(keys(key(w))("," +1),"()") ] }
+       * opt:ifnone()(, +1 opt(having(w)))
+       *)
+      (*% @prefix ifInt_ @format *)
+      GROUPBY of 'w exp_ast list * 'w having_ast option
+
+  and 'w having_ast =
+      (*% @prefix format_
+       * @format(w exp)
+       * !N0{ "HAVING" 2[ +1 exp(w) ] }
+       *)
+      (*% @prefix ifInt_ @format *)
+      HAVING of 'w exp_ast
+
+  and 'w orderby_ast =
+      (*% @prefix format_
+       * @format(key keys)
+       * !N0{ "ORDER" +d "BY" +1 2[ +1 keys(key)("," +1) ] }
+       * @format:key(w q * w2 asc opt)
+       * !N0{ q:ifInt(w)("0+") q(w) opt:ifnone()(,2[ +1 opt(asc(w2)) ]) }
+       *)
+      (*% @prefix ifInt_ @format *)
+      ORDERBY of ('w exp_ast * 'w ascdesc_ast option) list
+
+  and 'w limit_ast =
+      (*% @prefix format_
+       * @format({limit, offset: offset opt})
+       * limit opt:ifnone()(, +1 opt(offset))
+       * @format:limit(w exp expopt)
+       * !N0{ "LIMIT" +d expopt:ifnone()("ALL", expopt(exp(w))) }
+       * @format:offset(w exp)
+       * !N0{ "OFFSET" +d exp(w) }
+       *)
+      (*% @prefix ifInt_ @format *)
+      LIMIT of {limit : 'w exp_ast option, offset : 'w exp_ast option}
+    | (*% @prefix format_
+       * @format({offset, fetch: fetch opt})
+       * offset opt:ifnone()(, +1 opt(fetch))
+       * @format:offset(w exp * rows)
+       * !N0{ "OFFSET" +d N8{ exp(w) } +d rows}
+       * @format:fetch(first * w exp expopt * rows)
+       * !N0{ "FETCH" +d first expopt:ifnone()(, 2[ +1 N8{ expopt(exp(w)) } ])
+       *      +d rows +d "ONLY" }
+       *)
+      (*% @prefix ifInt_ @format *)
+      OFFSET of {offset : 'w exp_ast * string,
+                 fetch : (string * 'w exp_ast option * string) option}
+
+  and 'w query_ast =
+      (*% @prefix format_
+       * @format(w1 select
+       *         * w2 from
+       *         * w3 whr opt3
+       *         * w4 groupby opt4
+       *         * w5 orderby opt5
+       *         * w6 limit opt6)
+       * !N0{ select(w1)
+       *      +1 from(w2)
+       *      opt3:ifnone()(,+1 opt3(whr(w3)))
+       *      opt4:ifnone()(,+1 opt4(groupby(w4)))
+       *      opt5:ifnone()(,+1 opt5(orderby(w5)))
+       *      opt6:ifnone()(,+1 opt6(limit(w6)))
+       * }
+       *)
+      (*% @prefix ifInt_ @format *)
+      QUERY of 'w select_ast
+               * 'w from_ast
+               * 'w whr_ast option
+               * 'w groupby_ast option
+               * 'w orderby_ast option
+               * 'w limit_ast option
+
+  (*% *)
+  datatype 'w insert_value_ast =
+      (*% @format(w q) q(w) *)
+      VALUE of 'w exp_ast
+    | (*% @format "DEFAULT" *)
+      DEFAULT
+
+  (*% *)
+  datatype 'w insert_values_ast =
+      (*%
+       * @format(row rows) !N0{ "VALUES" 2[ +1 rows(row)("," +1) ] }
+       * @format:row(w v l) "(" !N0{ l(v(w))("," +1) ")" }
+       *)
+      INSERT_VALUES of 'w insert_value_ast list list
+    | (*% @format(w q) q(w) *)
+      INSERT_SELECT of 'w query_ast
+
+  (*%
+   * @formatter(ifnone) ifnone
+   * @formatter(iftrue) iftrue
+   *)
+  datatype 'w command_ast =
+      (*% @format(w q) q(w) *)
+      QUERY_COMMAND of 'w query_ast
+    | (*%
+       * @format(w1 table * label labels opt * w values)
+       * !N0{ "INSERT" +d "INTO" +d table(w1)
+       *      2[ opt:ifnone()(,+1 "(" !N0{ opt(labels(label)("," +1)) ")" }) ] }
+       * +1 values(w)
+       *)
+      INSERT of 'w table_id * id list option * 'w insert_values_ast
+    | (*%
+       * @format(w1 table * set sets * w2 whr opt)
+       * !N0{ "UPDATE" +d table(w1) }
+       * +1 !N0{ "SET" +d sets(set)("," +1) }
+       * opt:ifnone()(, +1 opt(whr(w2)))
+       * @format:set(id * w q)
+       * !N0{ id +d "=" 2[ +1 q(w) ] }
+       *)
+      UPDATE of 'w table_id * (id * 'w exp_ast) list * 'w whr_ast option
+    | (*%
+       * @format(w1 table * w2 whr opt)
+       * !N0{ "DELETE" +d "FROM" +d table(w1) }
+       * opt:ifnone()(, +1 opt(whr(w2)))
+       *)
+      DELETE of 'w table_id * 'w whr_ast option
+    | (*% @format "BEGIN" *)
+      BEGIN
+    | (*% @format "COMMIT" *)
+      COMMIT
+    | (*% @format "ROLLBACK" *)
+      ROLLBACK
+    | (*%
+       * @format(table * column columns)
+       * !N0{ "CREATE TABLE" +d table +d "(" columns(column)("," +d) ")" }
+       * @format:column(id * {ty, nullable})
+       * id +d ty nullable:iftrue()(, +d "NOT" +d "NULL")
+       *)
+      CREATE_TABLE of id * (id * {ty : string, nullable : bool}) list
+    | (*%
+       * @format(w1 c1 * w2 c2)
+       * c1(w1) ";" \n c2(w2)
+       *)
+      SEQ of 'w command_ast * 'w command_ast
+
+  val format_command_ast = fn () => format_command_ast (fn _ => nil)
+  val format_query_ast = fn () => format_query_ast (fn _ => nil)
+  val format_exp_ast = fn () => format_exp_ast (fn _ => nil)
+
+end

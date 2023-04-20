@@ -1,0 +1,90 @@
+(* _require local "../../../../smlformat-lib.smi" *)
+_require local "../../../data/symbols/main/Loc.smi"
+_require local "../../../data/symbols/main/Symbol.smi"
+_require local "../../../libs/ids/main/LocalID.smi"
+(* _require local "../../../libs/env/main/SEnv.smi" *)
+
+(* _require local "../../../data/builtin/main/BuiltinPrimitive.ppg.smi" *)
+(* _require local "../../../libs/util/main/TermFormat.smi" *)
+(* _require local "../../../compilerIRs/idcalc/main/IDCalc.ppg.smi" *)
+_require local "../../../data/builtin/main/BuiltinTypes.smi"
+_require "../../../compilerIRs/typedcalc/main/TypedCalc.ppg.smi"
+
+_require "../../../../basis.smi"
+_require "../../../data/symbols/main/RecordLabel.smi"
+_require local "../../../../smlnj-lib/Util/ord-key-sig.sml"
+_require "../../../../smlnj-lib/Util/binary-map-fn.smi"
+_require "../../../data/types/main/VarInfoEnv.smi"
+_require "../../../compilerIRs/absyn/main/AbsynConst.smi"
+_require "../../../data/types/main/Types.ppg.smi"
+
+structure MatchData = 
+struct
+  datatype kind = Bind | Match | Handle of Types.varInfo
+    
+  type const = AbsynConst.constant
+  type conInfo = Types.conInfo
+  type exnCon = TypedCalc.exnCon
+
+  structure ConstOrd = 
+  struct
+    type ord_key = const
+    val compare : ord_key * ord_key -> order
+  end
+
+  structure DataConOrd = 
+  struct
+    type ord_key = conInfo * Types.ty list option * bool
+    val compare : ord_key * ord_key -> order
+  end
+
+  structure ExnConOrd = 
+  struct
+    type ord_key = exnCon * bool
+    val compare : ord_key * ord_key -> order
+  end
+
+  structure SSOrd = 
+  struct
+    type ord_key = string * string
+    val compare : ord_key * ord_key -> order
+  end
+
+  structure ConstMap = BinaryMapFn (ConstOrd)
+  structure DataConMap = BinaryMapFn (DataConOrd)
+  structure ExnConMap = BinaryMapFn (ExnConOrd)
+  structure SSMap = BinaryMapFn (SSOrd)
+
+  type branchId = int
+
+  datatype pat
+  = WildPat of Types.ty
+  | VarPat of Types.varInfo
+  | ConstPat of const * Types.ty
+  | DataConPat of conInfo * Types.ty list option * bool * pat * Types.ty
+  | ExnConPat of exnCon * bool * pat * Types.ty
+  | RecPat of (RecordLabel.label * pat) list * Types.ty
+  | LayerPat of pat * pat
+  | OrPat of pat * pat
+
+ type exp = branchId
+
+  datatype rule
+    = End of exp
+    | ++ of pat * rule
+
+  type env = Types.varInfo VarInfoEnv.map
+
+  datatype tree
+    = EmptyNode
+    | LeafNode of exp * env
+    | EqNode of Types.varInfo * tree ConstMap.map * tree
+    | DataConNode of Types.varInfo * tree DataConMap.map * tree
+    | ExnConNode of Types.varInfo * tree ExnConMap.map * tree
+    | RecNode of Types.varInfo * RecordLabel.label * tree
+    | UnivNode of Types.varInfo * tree
+
+  val unitExp : TypedCalc.tpexp
+  val expDummy : TypedCalc.tpexp
+    
+end

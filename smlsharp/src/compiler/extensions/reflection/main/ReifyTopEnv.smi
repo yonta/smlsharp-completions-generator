@@ -1,0 +1,46 @@
+_require local "../../../../basis.smi"
+(* _require local "../../../../ffi/main/Pointer.smi" *)
+_require local "../../../../smlformat-lib.smi"
+(* _require local "../../../../config/main/PointerSize.smi" *)
+
+_require local "../../../libs/list-utils/main/ListSorter.smi"
+(* _require local "../../../libs/env/main/SEnv.smi" *)
+_require local "../../../libs/ids/main/LocalID.smi"
+_require local "../../../data/symbols/main/Loc.smi"
+_require local "../../../data/symbols/main/RecordLabel.smi"
+_require local "../../../data/symbols/main/Symbol.smi"
+_require local "../../../compilePhases/nameevaluation/main/NormalizeTy.smi"
+_require local "../../../compilePhases/nameevaluation/main/NameEvalUtils.smi"
+_require local "../../../compilerIRs/typedcalc/main/TypedCalcUtils.smi"
+(* _require local "../../../data/types/main/TypesBasics.smi" *)
+_require local "../../../data/types/main/Types.ppg.smi"
+_require local "../../../compilerIRs/idcalc/main/EvalIty.smi"
+
+_require local "../../userlevelprimitive/main/UserLevelPrimitive.smi"
+_require local "../../debug/main/Bug.smi"
+_require local "../../format-utils/main/SmlppgUtil.ppg.smi"
+
+(* _require local "./ReifiedTy.ppg.smi" *)
+_require local "./ReifiedTyData.smi"
+_require local "./ReifyUtils.smi"
+_require "../../../compilerIRs/idcalc/main/IDCalc.ppg.smi"
+(* _require "./ReifiedTerm.ppg.smi" *)
+(* _require "./TopEnvUtils.ppg.smi" *)
+_require local "../../../data/control/main/PrintControl.smi"
+
+_require "../../../../compiler/compilePhases/nameevaluation/main/NameEvalEnv.ppg.smi"
+_require local "../../../../compiler/compilePhases/nameevaluation/main/NameEvalEnvPrims.smi"
+_require "../../../../compiler/compilerIRs/typedcalc/main/TypedCalc.ppg.smi"
+
+structure ReifyTopEnv =
+struct
+  val topEnvBind 
+      : {sessionTopEnv:NameEvalEnv.topEnv,
+         requireTopEnv:NameEvalEnv.topEnv}
+         -> IDCalc.version -> {env:NameEvalEnv.topEnv, decls:TypedCalc.tpdecl list}
+(*
+  val topEnvToReifiedTopEnv
+      : NameEvalEnv.topEnv -> ReifiedTerm.topEnv
+*)
+
+end

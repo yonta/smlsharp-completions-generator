@@ -1,0 +1,11 @@
+(**
+ * default configuration for SQL
+ *
+ * @copyright (C) 2021 SML# Development Team.
+ * @author UENO Katsuhiro
+ *)
+
+structure SMLSharp_SQL_Config =
+struct
+  val DLLEXT = ref "%DLLEXT%"
+end

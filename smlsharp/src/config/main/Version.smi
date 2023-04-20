@@ -1,0 +1,5 @@
+structure SMLSharp_Version =
+struct
+  val Release : string
+  val DefaultSystemBaseDir : string
+end

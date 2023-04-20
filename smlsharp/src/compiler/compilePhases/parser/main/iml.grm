@@ -1,0 +1,2458 @@
+(* a grammar for the raw symtax of IML.
+ * @copyright (C) 2021 SML# Development Team.
+ * @author Atsushi Ohori, Kiyoshi Yamatodani, Liu Bochao
+ * @version $Id: iml.grm,v 1.69.6.8 2010/02/10 05:17:29 hiro-en Exp $
+
+ * Ohori: 2007/11/11
+ * WARNING: Large part of this file is copied to interface.grm.
+ * I indicates those positons that are from iml.grm in interface.grm.
+ * iml.grm is the original. If one change something there, he/she
+ * must propagate the change here.
+ * This is unsatisfactory situation. We will consider a better
+ * organization later.
+
+ * Ohori: 2012/10/9
+   id, longid are systematically changed to symbol and longsymbol
+   having location information.
+
+ * Ohori: 2013/06/29
+   Changed id to represent symbols.
+
+ * Ohori: 2015/09/24
+   Added SYMBOLICID and ALPHABETICID to restrict
+   structure and functor ids to alphabetic.
+*)
+
+structure A = Absyn
+structure S = AbsynSQL
+
+%%
+%decompose (yes)
+%blocksize (40)
+
+
+%eop EOF SEMICOLON
+
+(* %pos declares the type of positions for terminals.
+   Each symbol has an associated left and right position. *)
+
+%pos Loc.pos
+
+(* %pos is for user specified argument.
+   The following is the default; no need to specify.
+*)
+%arg (()) : unit
+
+%term EOF
+    | ABSTYPE
+    | ALL
+    | ALPHABETICID of string
+    | AND
+    | ANDALSO
+    | ARROW
+    | AS
+    | ASC
+    | ASTERISK
+    | AT
+    | ATTRIBUTE
+    | BAR
+    | BEGIN
+    | BUILTIN
+    | BY
+    | CASE
+    | CHAR of string
+    | COLON
+    | COMMA
+    | COMMIT
+    | CROSS
+    | DARROW
+    | DATATYPE
+    | DEFAULT
+    | DELETE
+    | DESC
+    | DISTINCT
+    | DO
+    | ELSE
+    | END
+    | EQ
+    | EQTYPE
+    | EQTYVAR of string
+    | FREE_EQTYVAR of string
+    | EXCEPTION
+    | EXISTS
+    | FALSE
+    | FETCH
+    | FIRST
+    | FN
+    | FOREACH
+    | FROM
+    | FUN
+    | FUNCTOR
+    | GROUP
+    | HANDLE
+    | HASH
+    | HAVING
+    | IF
+    | IMPORT
+    | INCLUDE
+    | IN
+    | INFIX
+    | INFIXR
+    | INNER
+    | INSERT
+    | INT of {radix:StringCvt.radix, digits:string}
+    | INTERFACE
+    | INTLAB of string
+    | INTO
+    | IS
+    | JOIN
+    | JOINOP
+    | EXTENDOP
+    | UPDATEOP
+    | DYNAMIC
+    | DYNAMICNULL
+    | DYNAMICTOP
+    | DYNAMICCASE
+    | DYNAMICVIEW
+    | DYNAMICIS
+    | LBRACE
+    | LBRACKET
+    | LET
+    | LIMIT
+    | LOCAL
+    | LPAREN
+    | NATURAL
+    | NEWLINE
+    | NEXT
+    | NONFIX
+    | NOT
+    | NULL
+    | OF
+    | OFFSET
+    | ON
+    | ONLY
+    | OP
+    | OPAQUE
+    | OPEN
+    | OR
+    | ORDER
+    | ORELSE
+    | PERIOD
+    | PERIODS
+    | POLYREC
+    | PREFIXEDLABEL of string
+    | RAISE
+    | RBRACE
+    | RBRACKET
+    | REAL of string
+    | REC
+    | REQUIRE
+    | ROLLBACK
+    | ROW
+    | ROWS
+    | RPAREN
+    | SELECT
+    | SELECTOR of string
+    | SEMICOLON
+    | SET
+    | SHARING
+    | SIG
+    | SIGNATURE
+    | SIZEOF
+    | REIFYTY
+    | SPECIAL of string
+    | SQL
+    | SQLEVAL
+    | SQLEXEC
+    | SQLSERVER
+    | STRING of string
+    | STRUCT
+    | STRUCTURE
+    | SYMBOLICID of string
+    | THEN
+    | TRUE
+    | TYPE
+    | TYVAR of string
+    | FREE_TYVAR of string
+    | UNDERBAR
+    | UNKNOWN
+    | UPDATE
+    | USE
+    | USE'
+    | VAL
+    | VALUES
+    | WHERE
+    | WHILE
+    | WITH
+    | WITHTYPE
+    | WORD of {radix:StringCvt.radix, digits:string}
+
+%nonterm
+      id of Symbol.symbol
+    | id_noEQ of Symbol.symbol
+    | id_noEQSTAR of Symbol.symbol
+    | id_noSQL of Symbol.symbol
+    | alphabetic_id of Symbol.symbol
+
+    | longid of Symbol.longsymbol
+    | longid_noSQL of Symbol.longsymbol
+    | tylongid of Symbol.longsymbol
+
+    | label of RecordLabel.label
+
+(*
+    | longtyconid of Symbol.longsymbol
+    | expid of Symbol.longsymbol
+    | symbol of Symbol.symbol
+    | symbol_noEQSTAR of Symbol.symbol
+    | symbol_noSQL of Symbol.symbol
+    | longsymbol of Symbol.longsymbol
+    | longtycon of Symbol.longsymbol
+    | explongsymbol of Symbol.longsymbol
+    | explongsymbol_noSQL of Symbol.longsymbol
+    | tylongsymbol of Symbol.longsymbol
+    | symbolseq of Symbol.symbol list
+    | longsymbolseq of Symbol.longsymbol list
+    | longsymboleqrow of Symbol.longsymbol list
+*)
+    | idseq of Symbol.symbol list
+    | longidseq of Symbol.longsymbol list
+    | longideqrow of Symbol.longsymbol list
+
+    | appexp of A.exp
+    | atexp of A.exp
+    | atexp_noVAR of A.exp
+    | atpat_noID_noPAREN of A.pat
+    | atpat of A.pat
+    | apppat of A.pat list
+    | atomicspec of A.spec
+    | constant of A.constant * A.loc
+    | condec of
+       {opFlag:bool,
+        conSymbol:Symbol.symbol,
+        tyOpt:A.ty option,
+        loc:A.loc}
+    | exndec of bool * Symbol.symbol * A.ty option
+    | combind of
+       {opFlag:bool,
+        conSymbol:Symbol.symbol,
+        tyOpt:A.ty option,
+        loc:A.loc} list
+    | condesc of (Symbol.symbol * A.ty option * A.loc) list
+    | dec of A.dec
+    | decs of A.dec list
+    | decseq_semicolon of A.dec list
+    | datbind of A.datbind list
+    | datdesc of
+      (A.tvar list * Symbol.symbol * (Symbol.symbol * A.ty option * A.loc) list * A.loc) list
+    | exprow of (RecordLabel.label * A.exp) list
+    | expseq_comma of A.exp list
+    | expseq_semicolon of A.exp list
+    | exp of A.exp
+    | expOrSQL of A.exp
+    | export of Symbol.longsymbol
+    | exbinds of A.exbind list
+    | exbind of A.exbind
+    | exdesc of (Symbol.symbol * A.ty option * A.loc) list
+    | fields of bool * (A.patrow list)
+    | followpatrow of A.patrow list
+    | fvalbind of
+        {fdecl:(A.pat list * A.ty option * A.exp * A.loc) list, loc:Loc.loc} list
+    | frule of A.pat list * A.ty option * A.exp * A.loc
+    | frules of (A.pat list * A.ty option * A.exp * A.loc) list
+    | funbind of A.funbind
+    | funbindand of A.funbind
+    | funbindseq of A.funbind list
+    | int of {radix:StringCvt.radix, digits:string}
+    | longtyconeqrow of Symbol.longsymbol list
+    | kindSeq of {properties : string list,
+                  recordKind : (RecordLabel.label * A.ty) list option}
+    | match of (A.pat * A.exp * A.loc) list
+    | mrule of A.pat * A.exp
+    | dynmatch of (A.kindedTvar list * A.pat * A.exp * A.loc) list
+    | exist_quantifier of A.kindedTvar list
+    | optaspat of A.pat option
+    | optop of bool
+    | optty of A.ty option
+    | patseq_comma of A.pat list
+    | patlongid of A.longsymbol
+    | patlongsymbol of Symbol.longsymbol
+    | pat of A.pat
+    | start of A.unitparseresult
+    | strexpbasic of A.strexp
+    | strexp of A.strexp
+    | strexpcomb of A.strexp
+    | strexpandexp of A.strexp
+    | strexpand of A.strexp
+    | strdec of A.strdec
+    | strdecseq_semicolon of A.strdec list
+    | strbind of A.strbind
+    | strbindand of A.strbind
+    | sigbind of (Symbol.symbol * A.sigexp) list
+    | spec of A.spec
+    | strdesc of (Symbol.symbol * A.sigexp) list
+    | strbindseq of A.strbind list
+    | sigidseq of Symbol.symbol list
+    | sharespec of Symbol.longsymbol list
+    | sigexpbasic of A.sigexp
+    | sigexpwhere of A.sigexp
+    | sigexp of A.sigexp
+    | sigexpand of A.sigexp
+    | ty of A.ty
+    | ty0 of A.ty
+    | ty1 of A.ty
+    | tycon of Symbol.symbol
+    | tyseq_comma of A.ty list
+    | tyseq of A.ty list
+    | tyrow_flex of bool * (RecordLabel.label * A.ty) list
+    | tyrow of (RecordLabel.label * A.ty) list
+    | tytuple of A.ty list
+    | tyvar of A.tvar
+    | free_tyvar of A.tvar
+    | tyvarseq of A.tvar list
+    | tyvarseq_comma of A.tvar list
+
+(* poly ty stuff
+  Ohori: poly_ty, poly_ty1, poly_tyrow, poly_tytuple  are added
+  for rank1 type specification.
+  2007/11/11
+  Need to extend with other kinds
+*)
+    | poly_ty of A.ty
+    | poly_ty1 of A.ty
+    | poly_tyrow of (RecordLabel.label * A.ty) list
+    | poly_tytuple of A.ty list
+    | kinded_tyvar of A.tvar * A.tvarKind
+    | kinded_free_tyvar of A.tvar * A.tvarKind
+    | kinded_tyvarseq of (A.tvar * A.tvarKind) list
+    | kinded_tyvarseq_without_paren of (A.tvar * A.tvarKind) list
+    | kinded_tyvarseq_comma of (A.tvar * A.tvarKind) list
+(* end of poly ty stuff *)
+
+    | ffityrow of (RecordLabel.label * A.ffiTy) list
+    | ffityseq of A.ffiTy list
+    | ffiVarArgs of A.ffiTy list
+    | ffiArgs of A.ffiTy list * A.ffiTy list option
+    | ffiContyArg of A.ffiTy list
+    | ffiAtty of A.ffiTy
+    | ffitupleseq of A.ffiTy list
+    | ffiTupleTy of A.ffiTy
+    | ffiFunArg of A.ffiTy list * A.ffiTy list option
+    | ffiFunRet of A.ffiTy list
+    | ffiFunty of A.ffiTy
+    | ffiattrseq of string list
+    | ffiattr of string list
+    | ffity of A.ffiTy
+    | ffity_COMMA of A.ffiTy
+    | ffityseq_COMMA of A.ffiTy list
+(*
+    | old_ffiContyArg of A.ty list
+    | old_ffiAtty of A.ty
+    | old_ffituple of A.ty list
+    | old_ffityseq of A.ty list
+    | old_ffityArg of A.ty list
+    | old_ffiFunty of A.ty list * A.ty
+    | old_ffity of A.ty
+*)
+    | typbind of
+      {
+        tyvars : A.tvar list,
+        tyConSymbol : Symbol.symbol,
+        ty : A.ty * A.loc,
+        loc : A.loc
+      } list
+    | typdesc of (A.tvar list * Symbol.symbol) list
+    | useFile of A.top
+    | tops of A.top list
+    | topdecs of A.topdec list
+    | topdec of A.topdec
+    | interface of A.interface
+    | unit of A.unit
+    | valdesc of (Symbol.symbol * A.ty) list
+    | valbind of (A.pat * A.exp * A.loc) list
+
+(* polymorphic recursion *)
+    | pvalbind of (Symbol.symbol * A.ty * A.exp * A.loc) list
+
+(* sql *)
+    | sqlserver of (string * A.exp) list
+    | sql of A.exp
+    | sqlcon of A.exp S.sql
+    | sqlconseq of (A.exp, A.exp S.sql * S.loc) S.clause list
+    | sqlopt of unit
+    | sqlSelectClause of A.exp S.select
+    | sqlSelectClauseExp of (A.exp, A.exp S.select) S.clause
+    | sqlSelectQuery of A.exp S.query
+    | sqlFromClause of A.exp S.from
+    | sqlFromClauseExp of (A.exp, A.exp S.from) S.clause
+    | sqlWhereClause of A.exp S.whr
+    | sqlWhereClauseExp of (A.exp, A.exp S.whr) S.clause
+    | sqlWhereClauseOpt of (A.exp, A.exp S.whr) S.clause option
+    | sqlGroupbyClauseOpt of A.exp S.groupby option
+    | sqlHavingClauseOpt of A.exp S.having option
+    | sqlOrderbyClause of A.exp S.orderby
+    | sqlOrderbyClauseOpt of (A.exp, A.exp S.orderby) S.clause option
+    | sqlOffsetClause of A.exp S.offset
+    | sqlLimitClause of A.exp S.limit
+    | sqlLimitOrOffsetClauseOpt of A.exp S.limit_or_offset option
+    | sqlFirstNext of string
+    | sqlRowRows of string
+    | sqlDistinct of S.distinct option
+    | sqlSelectList of (S.label option * A.exp S.exp) list
+    | sqlSelectItem of S.label option * A.exp S.exp
+    | sqlOrderbyKeyseq of (A.exp S.exp * S.asc_desc option) list
+    | sqlOrderbyKey of A.exp S.exp * S.asc_desc option
+    | sqljoinseq of A.exp S.table list
+    | sqljoin of A.exp S.table
+    | sqltableAs of A.exp S.table
+    | sqltable of A.exp S.table
+    | sqltableid of S.table_selector
+    | sqlInsertCommand of A.exp S.sql
+    | labelseq of RecordLabel.label list
+    | sqlInsertValues of A.exp S.insert_values
+    | sqlvalues of ((A.exp S.exp option * S.loc) list * S.loc) list
+    | sqlexpOrDefaultseq of (A.exp S.exp option * S.loc) list
+    | sqlexpOrDefault of A.exp S.exp option * S.loc
+    | sqlUpdateCommand of A.exp S.sql
+    | sqlsetseq of (RecordLabel.label * A.exp S.exp) list
+    | sqlDeleteCommand of A.exp S.sql
+    | sqlexpseq of A.exp S.exp list
+    | sqltopexpseq of A.exp S.exp list
+    | sqltopexp of A.exp S.exp
+    | sqlandexp of A.exp S.exp
+    | sqlnotexp of A.exp S.exp
+    | sqlappexp of A.exp S.exp
+    | sqlatexp of A.exp S.exp
+    | sqlkwexp of A.exp S.exp
+    | sqlexp of A.exp S.exp
+    | sqlparen of A.exp S.sql
+    | sqlpat of A.pat
+    | sqlatpat of A.pat
+
+%name ML
+%header (structure ML)
+%footer ()
+%right ARROW
+%right AND
+%right DARROW
+%nonassoc BAR
+%left DO
+%left HASH
+%left ELSE
+%left RAISE
+%right HANDLE
+%left ORELSE
+%left ANDALSO
+%right AS
+%left COLON
+%noshift EOF
+%verbose
+%start start
+%%
+
+start
+        : unit
+          (A.UNIT unit)
+        | expOrSQL
+          (A.UNIT
+             {tops =
+                [A.TOPDEC
+                   [A.TOPDECSTR
+                      (A.COREDEC
+                         (A.DECVAL
+                            (nil,
+                             [(A.PATID
+                                 {opPrefix = false,
+                                  longsymbol =
+                                    Symbol.mkLongsymbol
+                                      ["it"]
+                                      (Loc.nopos, Loc.nopos),
+                                  loc = (Loc.nopos, Loc.nopos)},
+                               expOrSQL,
+                               Loc.noloc)],
+                             (expOrSQLleft, expOrSQLright)),
+                          (Loc.nopos, Loc.nopos)),
+                       (Loc.nopos, Loc.nopos))]],
+              interface = A.NOINTERFACE,
+              loc = (Loc.nopos, Loc.nopos)})
+
+(****************** constant ***************************)
+int
+        : INT
+          (INT)
+        | INTLAB
+          ({radix = StringCvt.DEC, digits = INTLAB})
+
+constant
+        : int
+          ((A.INT (valOf (StringCvt.scanString
+                            (IntInf.scan (#radix int))
+                            (#digits int))),
+            (intleft, intright)))
+        | WORD
+          ((A.WORD (valOf (StringCvt.scanString
+                             (IntInf.scan (#radix WORD))
+                             (#digits WORD))),
+            (WORDleft, WORDright)))
+        | STRING
+          ((A.STRING STRING, (STRINGleft, STRINGright)))
+        | REAL
+          ((A.REAL REAL, (REALleft, REALright)))
+        | CHAR
+          ((A.CHAR (String.sub (CHAR, 0)), (CHARleft, CHARright)))
+(* end of constant *)
+
+(*** raw id ***)
+
+alphabetic_id
+        : ALPHABETICID
+          (Symbol.mkSymbol ALPHABETICID (ALPHABETICIDleft, ALPHABETICIDright))
+        | ALL
+          (Symbol.mkSymbol "all" (ALLleft, ALLright))
+        | ASC
+          (Symbol.mkSymbol "asc" (ASCleft, ASCright))
+        | BEGIN
+          (Symbol.mkSymbol "begin" (BEGINleft, BEGINright))
+        | BY
+          (Symbol.mkSymbol "by" (BYleft, BYright))
+        | COMMIT
+          (Symbol.mkSymbol "commit" (COMMITleft, COMMITright))
+        | CROSS
+          (Symbol.mkSymbol "cross" (CROSSleft, CROSSright))
+        | DEFAULT
+          (Symbol.mkSymbol "default" (DEFAULTleft, DEFAULTright))
+        | DELETE
+          (Symbol.mkSymbol "delete" (DELETEleft, DELETEright))
+        | DESC
+          (Symbol.mkSymbol "desc" (DESCleft, DESCright))
+        | DISTINCT
+          (Symbol.mkSymbol "distinct" (DISTINCTleft, DISTINCTright))
+        | EXISTS
+          (Symbol.mkSymbol "exists" (EXISTSleft, EXISTSright))
+        | FALSE
+          (Symbol.mkSymbol "false" (FALSEleft, FALSEright))
+        | FETCH
+          (Symbol.mkSymbol "fetch" (FETCHleft, FETCHright))
+        | FIRST
+          (Symbol.mkSymbol "first" (FIRSTleft, FIRSTright))
+        | FROM
+          (Symbol.mkSymbol "from" (FROMleft, FROMright))
+        | GROUP
+          (Symbol.mkSymbol "group" (GROUPleft, GROUPright))
+        | HAVING
+          (Symbol.mkSymbol "having" (HAVINGleft, HAVINGright))
+        | INNER
+          (Symbol.mkSymbol "inner" (INNERleft, INNERright))
+        | INSERT
+          (Symbol.mkSymbol "insert" (INSERTleft, INSERTright))
+        | INTO
+          (Symbol.mkSymbol "into" (INTOleft, INTOright))
+        | IS
+          (Symbol.mkSymbol "is" (ISleft, ISright))
+        | JOIN
+          (Symbol.mkSymbol "join" (JOINleft, JOINright))
+        | LIMIT
+          (Symbol.mkSymbol "limit" (LIMITleft, LIMITright))
+        | NATURAL
+          (Symbol.mkSymbol "natural" (NATURALleft, NATURALright))
+        | NEXT
+          (Symbol.mkSymbol "next" (NEXTleft, NEXTright))
+        | NOT
+          (Symbol.mkSymbol "not" (NOTleft, NOTright))
+        | NULL
+          (Symbol.mkSymbol "null" (NULLleft, NULLright))
+        | OFFSET
+          (Symbol.mkSymbol "offset" (OFFSETleft, OFFSETright))
+        | ON
+          (Symbol.mkSymbol "on" (ONleft, ONright))
+        | ONLY
+          (Symbol.mkSymbol "only" (ONLYleft, ONLYright))
+        | OR
+          (Symbol.mkSymbol "or" (ORleft, ORright))
+        | ORDER
+          (Symbol.mkSymbol "order" (ORDERleft, ORDERright))
+        | ROLLBACK
+          (Symbol.mkSymbol "rollback" (ROLLBACKleft, ROLLBACKright))
+        | ROW
+          (Symbol.mkSymbol "row" (ROWleft, ROWright))
+        | ROWS
+          (Symbol.mkSymbol "rows" (ROWSleft, ROWSright))
+        | SELECT
+          (Symbol.mkSymbol "select" (SELECTleft, SELECTright))
+        | SET
+          (Symbol.mkSymbol "set" (SETleft, SETright))
+        | TRUE
+          (Symbol.mkSymbol "true" (TRUEleft, TRUEright))
+        | UNKNOWN
+          (Symbol.mkSymbol "unknown" (UNKNOWNleft, UNKNOWNright))
+        | UPDATE
+          (Symbol.mkSymbol "update" (UPDATEleft, UPDATEright))
+        | VALUES
+          (Symbol.mkSymbol "values" (VALUESleft, VALUESright))
+
+id_noEQSTAR
+        : alphabetic_id
+          (alphabetic_id)
+        | SYMBOLICID
+          (Symbol.mkSymbol SYMBOLICID (SYMBOLICIDleft, SYMBOLICIDright))
+
+id_noEQ
+        : id_noEQSTAR
+          (id_noEQSTAR)
+        | ASTERISK
+          (Symbol.mkSymbol "*" (ASTERISKleft, ASTERISKright))
+
+id
+        : id_noEQ
+          (id_noEQ)
+        | EQ
+          (Symbol.mkSymbol "=" (EQleft, EQright))
+
+id_noSQL
+        : ALPHABETICID
+          (Symbol.mkSymbol ALPHABETICID (ALPHABETICIDleft, ALPHABETICIDright))
+        | SYMBOLICID
+          (Symbol.mkSymbol SYMBOLICID (SYMBOLICIDleft, SYMBOLICIDright))
+        | EQ
+          (Symbol.mkSymbol "=" (EQleft, EQright))
+        | ASTERISK
+          (Symbol.mkSymbol "*" (ASTERISKleft, ASTERISKright))
+
+longid
+        : id
+          ([id])
+        | alphabetic_id PERIOD longid
+          (alphabetic_id :: longid)
+
+(*
+longtyconid : id ([id])
+            | id PERIOD longtyconid (id::longtyconid)
+*)
+
+longid_noSQL
+        : id_noSQL
+          ([id_noSQL])
+        | alphabetic_id PERIOD longid
+          (alphabetic_id :: longid)
+
+tylongid
+        : id_noEQSTAR
+          ([id_noEQSTAR])
+        | alphabetic_id PERIOD longid
+          (alphabetic_id :: longid)
+
+patlongid
+        : id_noEQ
+          ([id_noEQ])
+        | alphabetic_id PERIOD longid
+          (alphabetic_id :: longid)
+
+
+(*** symbols
+
+ expid : longid (longid)
+
+ symbol_noEQSTAR     : id_noEQSTAR (Symbol.mkSymbol id_noEQSTAR (id_noEQSTARleft, id_noEQSTARright))
+ symbol              : id (Symbol.mkSymbol id (idleft,idright))
+ longsymbol          : longid (Symbol.mkLongsymbol longid (longidleft,longidright))
+ longtycon           : longtyconid (Symbol.mkLongsymbol longtyconid (longtyconidleft,longtyconidright))
+ explongsymbol       : expid (Symbol.mkLongsymbol expid (expidleft,expidright))
+ explongsymbol_noSQL : expid_noSQL (Symbol.mkLongsymbol expid_noSQL (expid_noSQLleft,expid_noSQLright))
+ tylongsymbol        : tylongid (Symbol.mkLongsymbol tylongid (tylongidleft,tylongidright))
+ patlongsymbol       : patlongid (Symbol.mkLongsymbol patlongid (patlongidleft,patlongidright))
+
+ symbolseq : symbol ([symbol])
+           | symbol symbolseq (symbol::symbolseq)
+
+ longsymbolseq : longsymbol ([longsymbol])
+           | longsymbol longsymbolseq (longsymbol::longsymbolseq)
+
+***)
+
+idseq
+        : id
+          ([id])
+        | id idseq
+          (id :: idseq)
+
+longidseq
+        : longid
+          ([longid])
+        | longid longidseq
+          (longid :: longidseq)
+
+(*** expressions ***)
+
+atexp_noVAR
+        : constant
+          (A.EXPCONSTANT constant)
+        | JOINOP LPAREN exp COMMA exp RPAREN
+          (A.EXPJOIN (true, exp1, exp2, (JOINOPleft, RPARENright)))
+        | EXTENDOP LPAREN exp COMMA exp RPAREN
+          (A.EXPJOIN (false, exp1, exp2, (EXTENDOPleft, RPARENright)))
+        | UPDATEOP LPAREN exp COMMA exp RPAREN
+          (A.EXPRECORD_UPDATE2 (exp1, exp2, (UPDATEOPleft, RPARENright)))
+        | OP longid
+          (A.EXPOPID (longid, (OPleft, longidright)))
+        | SIZEOF LPAREN ty RPAREN
+          (A.EXPSIZEOF (ty, (SIZEOFleft, RPARENright)))
+        | LBRACE exprow RBRACE
+          (A.EXPRECORD (exprow, (LBRACEleft, RBRACEright)))
+        | LBRACE RBRACE
+          (A.EXPRECORD (nil, (LBRACEleft, RBRACEright)))
+        | LPAREN RPAREN
+          (A.EXPCONSTANT (A.UNITCONST, (LPARENleft, RPARENright)))
+        | SELECTOR
+          (A.EXPRECORD_SELECTOR (RecordLabel.fromString SELECTOR, (SELECTORleft, SELECTORright)))
+        | HASH label
+          (A.EXPRECORD_SELECTOR (label, (HASHleft, labelright)))
+        | LBRACKET RBRACKET
+          (A.EXPLIST ([], (LBRACKETleft, RBRACKETright)))
+        | LBRACKET expOrSQL RBRACKET
+          (A.EXPLIST ([expOrSQL], (LBRACKETleft, RBRACKETright)))
+        | LBRACKET expseq_comma RBRACKET
+          (A.EXPLIST (expseq_comma, (LBRACKETleft, RBRACKETright)))
+        | LET decseq_semicolon IN expseq_semicolon END
+          (A.EXPLET (decseq_semicolon, expseq_semicolon, (LETleft, ENDright)))
+        | REIFYTY LPAREN ty RPAREN
+          (A.EXPREIFYTY (ty, (REIFYTYleft, RPARENright)))
+        | SQL LPAREN sqlparen RPAREN
+          (A.EXPSQL (S.SQL sqlparen, (SQLleft, RPARENright)))
+        | LPAREN expseq_comma RPAREN
+          (A.EXPTUPLE (expseq_comma, (LPARENleft, RPARENright)))
+        | LPAREN expOrSQL SEMICOLON expseq_semicolon RPAREN
+          (A.EXPSEQ (expOrSQL :: expseq_semicolon, (LPARENleft, RPARENright)))
+        | LPAREN expOrSQL RPAREN
+          (expOrSQL)
+        | FOREACH id IN exp WHERE exp WITH pat DO exp WHILE exp END
+          (A.EXPFOREACH
+             (A.FOREACHDATA
+                {id = id1,
+                 pat = pat,
+                 data = exp1,
+                 whereParam = exp2,
+                 iterate = exp3,
+                 pred = exp4},
+              (FOREACHleft, ENDright)))
+        | FOREACH id IN exp WITH pat DO exp WHILE exp END
+          (A.EXPFOREACH
+             (A.FOREACHARRAY
+                {id = id1,
+                 pat = pat,
+                 data = exp1,
+                 iterate = exp2,
+                 pred = exp3},
+              (FOREACHleft, ENDright)))
+
+atexp
+        : atexp_noVAR
+          (atexp_noVAR)
+        | longid
+          (A.EXPID(longid))
+
+label
+        : id
+          (RecordLabel.fromString (Symbol.symbolToString id))
+        | INTLAB
+          (RecordLabel.fromString INTLAB)
+        | STRING
+          (RecordLabel.fromString STRING)
+        | PREFIXEDLABEL
+          (RecordLabel.fromString PREFIXEDLABEL)
+
+(* equal or more than 1 *)
+exprow
+        : label EQ exp
+          ([(label,exp)])
+        | exprow COMMA label EQ exp
+          (exprow @ [(label, exp)])
+
+(* equal or more than 2 exps *)
+expseq_comma
+        : exp COMMA exp
+          ([exp1, exp2])
+        | expseq_comma COMMA exp
+          (expseq_comma @ [exp])
+
+(* equal or more than 1 exps *)
+expseq_semicolon
+        : expOrSQL
+          ([expOrSQL])
+        | expseq_semicolon SEMICOLON expOrSQL
+          (expseq_semicolon @ [expOrSQL])
+
+appexp
+        : atexp
+          (A.EXPAPP([atexp],(atexpleft,atexpright)))
+        | appexp atexp
+          (case appexp of
+             A.EXPAPP (l, _) =>
+             A.EXPAPP (l @ [atexp], (appexpleft, atexpright))
+           | _ => A.EXPAPP ([appexp, atexp], (appexpleft, atexpright)))
+(*
+        | appexp HASH atexp
+          (A.EXPRECORD_UPDATE2 (appexp, atexp, (appexpleft, atexpright)))
+*)
+        | appexp HASH LBRACE atexp RBRACE
+          (A.EXPRECORD_UPDATE2 (appexp, atexp, (appexpleft, RBRACEright)))
+        | appexp HASH LBRACE exprow RBRACE
+          (A.EXPRECORD_UPDATE (appexp, exprow, (appexpleft, RBRACEright)))
+        | appexp HASH LBRACE RBRACE
+          (A.EXPRECORD_UPDATE (appexp, nil, (appexpleft, RBRACEright)))
+        | appexp HASH LPAREN expseq_comma RPAREN
+          (A.EXPRECORD_UPDATE
+             (appexp, RecordLabel.tupleList expseq_comma,
+              (appexpleft, RPARENright)))
+exp
+        : appexp
+          (appexp)
+        | exp COLON ty
+          (A.EXPTYPED (exp, ty, (expleft, tyright)))
+        | exp COLON IMPORT ffity
+          (A.EXPFFIIMPORT (A.FFIFUN exp, ffity, (expleft, ffityright)))
+        | IMPORT STRING COLON ffity
+          (A.EXPFFIIMPORT
+             (A.FFIEXTERN STRING, ffity, (IMPORTleft, ffityright)))
+        | exp ANDALSO exp
+          (A.EXPCONJUNCTION (exp1, exp2, (exp1left, exp2right)))
+        | exp ORELSE exp
+          (A.EXPDISJUNCTION (exp1, exp2, (exp1left, exp2right)))
+        | exp HANDLE match
+          (A.EXPHANDLE (exp, match, (expleft, matchright)))
+        | RAISE exp
+          (A.EXPRAISE (exp, (RAISEleft, expright)))
+        | IF exp THEN exp ELSE exp
+          (A.EXPIF (exp1, exp2, exp3, (IFleft, exp3right)))
+        | WHILE exp DO exp
+          (A.EXPWHILE (exp1, exp2, (WHILEleft, exp2right)))
+        | CASE exp OF match
+          (A.EXPCASE (exp, match, (CASEleft, matchright)))
+        | FN match
+          (A.EXPFN (match, (FNleft, matchright)))
+        | SQLSERVER COLON ty
+          (A.EXPSQL (AbsynSQL.SQLSERVER (NONE, ty), (SQLSERVERleft, tyright)))
+        | SQLSERVER appexp COLON ty
+          (A.EXPSQL
+             (AbsynSQL.SQLSERVER (SOME appexp, ty), (SQLSERVERleft, tyright)))
+        | DYNAMIC exp AS ty
+          (A.EXPDYNAMIC (exp, ty, (DYNAMICleft, tyright)))
+        | DYNAMIC exp OF ty
+          (A.EXPDYNAMICIS (exp, ty, (DYNAMICleft, tyright)))
+        | DYNAMICVIEW exp AS ty
+          (A.EXPDYNAMICVIEW (exp, ty, (DYNAMICVIEWleft, tyright)))
+        | DYNAMICNULL AS ty
+          (A.EXPDYNAMICNULL (ty, (DYNAMICNULLleft, tyright)))
+        | DYNAMICTOP AS ty
+          (A.EXPDYNAMICTOP (ty, (DYNAMICTOPleft, tyright)))
+        | DYNAMICCASE exp OF dynmatch
+          (A.EXPDYNAMICCASE (exp, dynmatch, (DYNAMICCASEleft, dynmatchright)))
+
+expOrSQL
+        : exp
+          (exp)
+        | sql
+          (sql)
+
+(*
+match : mrule                        ([mrule])
+      | mrule BAR match                (mrule::match)
+mrule : pat DARROW exp                ((pat,exp))
+
+match : mrule                        ([mrule])
+      | mrulebar match                (mrulebar::match)
+mrule : pat DARROW exp                ((pat,exp))
+mrulebar : pat DARROW exp BAR                ((pat,exp))
+
+It seems that the core ML's "|" has inherent problem, which coincides
+with my experience. I have been bothered by the "|" in combination
+with  case, fn, and  handle.
+*)
+
+match
+        : pat DARROW exp
+          ([(pat, exp, (patleft, expright))])
+        | pat DARROW exp BAR match
+          ((pat, exp, (patleft, expright)) :: match)
+
+dynmatch
+        : exist_quantifier pat DARROW exp
+          ([(exist_quantifier, pat, exp, (patleft, expright))])
+        | exist_quantifier pat DARROW exp BAR dynmatch
+          ((exist_quantifier, pat, exp, (patleft, expright)) :: dynmatch)
+        | pat DARROW exp
+          ([(nil, pat, exp, (patleft, expright))])
+        | pat DARROW exp BAR dynmatch
+          ((nil, pat, exp, (patleft, expright)) :: dynmatch)
+
+exist_quantifier
+        : LBRACE kinded_tyvar RBRACE
+          ([kinded_tyvar])
+        | LBRACE kinded_tyvarseq_comma RBRACE
+          (kinded_tyvarseq_comma)
+
+(* end of expression *)
+
+(*************************** sql ********************************)
+
+sql
+        : SQL sqlpat DARROW sqlcon
+          (A.EXPSQL (S.SQLFN (sqlpat, sqlcon), (SQLleft, sqlconright)))
+        | SQL sqlpat DARROW PERIODS LPAREN expOrSQL RPAREN
+          (A.EXPSQL
+             (S.SQLFN (sqlpat,
+                       S.SEQ [S.EMBED (expOrSQL, (PERIODSleft, RPARENright))]),
+              (SQLleft, RPARENright)))
+        | SQL sqlpat DARROW LPAREN sqlconseq RPAREN
+          (A.EXPSQL (S.SQLFN (sqlpat, S.SEQ sqlconseq), (SQLleft, RPARENright)))
+        | SQL sqlcon
+          (A.EXPSQL (S.SQL sqlcon, (SQLleft, sqlconright)))
+        | SQL sqlkwexp
+          (A.EXPSQL (S.SQL (S.EXP sqlkwexp), (SQLleft, sqlkwexpright)))
+        | FN pat DARROW sql
+          (A.EXPFN ([(pat, sql, (patleft, sqlright))], (FNleft, sqlright)))
+
+sqlopt
+        : (* none *)
+          (())
+        | SQL
+          (())
+
+sqlcon
+        : sqlSelectQuery
+          (S.QRY sqlSelectQuery)
+        | sqlSelectClause
+          (S.SEL sqlSelectClause)
+        | sqlFromClause
+          (S.FRM sqlFromClause)
+        | sqlWhereClause
+          (S.WHR sqlWhereClause)
+        | sqlOrderbyClause
+          (S.ORD sqlOrderbyClause)
+        | sqlOffsetClause
+          (S.OFF sqlOffsetClause)
+        | sqlLimitClause
+          (S.LMT sqlLimitClause)
+        | sqlInsertCommand
+          (sqlInsertCommand)
+        | sqlUpdateCommand
+          (sqlUpdateCommand)
+        | sqlDeleteCommand
+          (sqlDeleteCommand)
+        | BEGIN
+          (S.BEGIN)
+        | COMMIT
+          (S.COMMIT)
+        | ROLLBACK
+          (S.ROLLBACK)
+
+sqlconseq
+        : sqlcon
+          ([S.CLAUSE (sqlcon, (sqlconleft, sqlconright))])
+        | PERIODS LPAREN expOrSQL RPAREN
+          ([S.EMBED (expOrSQL, (PERIODSleft, RPARENright))])
+        | sqlcon SEMICOLON sqlconseq
+          (S.CLAUSE (sqlcon, (sqlconleft, sqlconright)) :: sqlconseq)
+        | PERIODS LPAREN expOrSQL RPAREN SEMICOLON sqlconseq
+          (S.EMBED (expOrSQL, (PERIODSleft, RPARENright)) :: sqlconseq)
+
+sqlSelectClause
+        : SELECT sqlDistinct sqlSelectList
+          (S.SELECT
+             (sqlDistinct,
+              (sqlSelectList, (sqlSelectListleft, sqlSelectListright)),
+              (SELECTleft, sqlSelectListright)))
+
+sqlSelectClauseExp
+        : SELECT PERIODS LPAREN expOrSQL RPAREN
+          (S.EMBED (expOrSQL, (SELECTleft, expOrSQLright)))
+        | sqlSelectClause
+          (S.CLAUSE sqlSelectClause)
+
+sqlSelectQuery
+        : sqlSelectClauseExp sqlFromClauseExp sqlWhereClauseOpt
+          sqlGroupbyClauseOpt sqlOrderbyClauseOpt
+          sqlLimitOrOffsetClauseOpt
+          (S.QUERY (sqlSelectClauseExp,
+                    sqlFromClauseExp,
+                    sqlWhereClauseOpt,
+                    sqlGroupbyClauseOpt,
+                    sqlOrderbyClauseOpt,
+                    sqlLimitOrOffsetClauseOpt,
+                    (sqlSelectClauseExpleft, sqlLimitOrOffsetClauseOptright)))
+        | SELECT PERIODS LPAREN expOrSQL RPAREN
+          (S.QUERY_EMBED (expOrSQL, (SELECTleft, expOrSQLright)))
+
+sqlFromClause
+        : FROM sqljoinseq
+          (S.FROM (sqljoinseq, (sqljoinseqleft, sqljoinseqright)))
+
+sqlFromClauseExp
+        : FROM PERIODS LPAREN expOrSQL RPAREN
+          (S.EMBED (expOrSQL, (FROMleft, expOrSQLright)))
+        | sqlFromClause
+          (S.CLAUSE sqlFromClause)
+
+sqlWhereClause
+        : WHERE sqlexp
+          (S.WHERE (sqlexp, (WHEREleft, sqlexpright)))
+
+sqlWhereClauseExp
+        : WHERE PERIODS LPAREN expOrSQL RPAREN
+          (S.EMBED (expOrSQL, (WHEREleft, expOrSQLright)))
+        | sqlWhereClause
+          (S.CLAUSE sqlWhereClause)
+
+sqlWhereClauseOpt
+        : (* none *)
+          (NONE)
+        | sqlWhereClauseExp
+          (SOME sqlWhereClauseExp)
+
+sqlGroupbyClauseOpt
+        : (* none *)
+          (NONE)
+        | GROUP BY sqlexpseq sqlHavingClauseOpt
+          (SOME (S.GROUP_BY ((sqlexpseq, (GROUPleft, sqlexpseqright)),
+                             sqlHavingClauseOpt)))
+
+sqlHavingClauseOpt
+        : (* none *)
+          (NONE)
+        | HAVING sqlexp
+          (SOME (S.HAVING (sqlexp, (HAVINGleft, sqlexpright))))
+
+sqlOrderbyClause
+        : ORDER BY sqlOrderbyKeyseq
+          (S.ORDER_BY (sqlOrderbyKeyseq, (ORDERleft, sqlOrderbyKeyseqright)))
+
+sqlOrderbyClauseOpt
+        : (* none *)
+          (NONE)
+        | ORDER BY PERIODS LPAREN expOrSQL RPAREN
+          (SOME (S.EMBED (expOrSQL, (ORDERleft, expOrSQLright))))
+        | sqlOrderbyClause
+          (SOME (S.CLAUSE sqlOrderbyClause))
+
+sqlLimitClause
+        : LIMIT sqlexp
+          (S.LIMIT {limit = (SOME sqlexp, (LIMITleft, sqlexpright)),
+                    offset = NONE,
+                    loc = (LIMITleft, sqlexpright)})
+        | LIMIT ALL
+          (S.LIMIT {limit = (NONE, (LIMITleft, ALLright)),
+                    offset = NONE,
+                    loc = (LIMITleft, ALLright)})
+        | LIMIT sqlexp OFFSET sqlexp
+          (S.LIMIT {limit = (SOME sqlexp1, (LIMITleft, sqlexp1right)),
+                    offset = SOME (sqlexp2, (OFFSETleft, sqlexp2right)),
+                    loc = (LIMITleft, sqlexpright)})
+        | LIMIT ALL OFFSET sqlexp
+          (S.LIMIT {limit = (NONE, (LIMITleft, ALLright)),
+                    offset = SOME (sqlexp, (OFFSETleft, sqlexpright)),
+                    loc = (LIMITleft, sqlexpright)})
+
+sqlOffsetClause
+        : OFFSET sqlatexp sqlRowRows
+          (S.OFFSET
+             {offset = (sqlatexp, sqlRowRows, (OFFSETleft, sqlRowRowsright)),
+              fetch = NONE,
+              loc = (OFFSETleft, sqlRowRowsright)})
+        | OFFSET sqlatexp sqlRowRows FETCH sqlFirstNext sqlatexp sqlRowRows ONLY
+          (S.OFFSET
+             {offset = (sqlatexp1, sqlRowRows, (OFFSETleft, sqlRowRowsright)),
+              fetch = SOME (sqlFirstNext, SOME sqlatexp2, sqlRowRows,
+                            (OFFSETleft, ONLYright)),
+              loc = (OFFSETleft, ONLYright)})
+        | OFFSET sqlatexp sqlRowRows FETCH sqlFirstNext sqlRowRows ONLY
+          (S.OFFSET
+             {offset = (sqlatexp, sqlRowRows, (OFFSETleft, sqlRowRowsright)),
+              fetch = SOME (sqlFirstNext, NONE, sqlRowRows,
+                            (OFFSETleft, ONLYright)),
+              loc = (OFFSETleft, ONLYright)})
+
+sqlLimitOrOffsetClauseOpt
+        : (* none *)
+          (NONE)
+        | LIMIT PERIODS LPAREN expOrSQL RPAREN
+          (SOME (S.LIMIT_CLAUSE (S.EMBED (expOrSQL, (LIMITleft, RPARENright)))))
+        | sqlLimitClause
+          (SOME (S.LIMIT_CLAUSE (S.CLAUSE sqlLimitClause)))
+        | OFFSET PERIODS LPAREN expOrSQL RPAREN
+          (SOME (S.OFFSET_CLAUSE
+                   (S.EMBED (expOrSQL, (OFFSETleft, RPARENright)))))
+        | sqlOffsetClause
+          (SOME (S.OFFSET_CLAUSE (S.CLAUSE sqlOffsetClause)))
+
+sqlFirstNext
+        : FIRST
+          ("FIRST")
+        | NEXT
+          ("NEXT")
+
+sqlRowRows
+        : ROW
+          ("ROW")
+        | ROWS
+          ("ROWS")
+
+sqlDistinct
+        : (* none *)
+          (NONE)
+        | DISTINCT
+          (SOME S.DISTINCT)
+        | ALL
+          (SOME S.ALL)
+
+sqlSelectList
+        : sqlSelectItem
+          (sqlSelectItem :: nil)
+        | sqlSelectItem COMMA sqlSelectList
+          (sqlSelectItem :: sqlSelectList)
+
+sqlSelectItem
+        : sqlexp
+          ((NONE, sqlexp))
+        | sqlexp AS label
+          ((SOME label, sqlexp))
+
+sqlOrderbyKeyseq
+        : sqlOrderbyKey
+          (sqlOrderbyKey :: nil)
+        | sqlOrderbyKey COMMA sqlOrderbyKeyseq
+          (sqlOrderbyKey :: sqlOrderbyKeyseq)
+
+sqlOrderbyKey
+        : sqlexp
+          ((sqlexp, NONE))
+        | sqlexp ASC
+          ((sqlexp, SOME S.ASC))
+        | sqlexp DESC
+          ((sqlexp, SOME S.DESC))
+
+sqljoinseq
+        : sqljoin
+          (sqljoin :: nil)
+        | sqljoin COMMA sqljoinseq
+          (sqljoin :: sqljoinseq)
+
+sqljoin
+        : sqltableAs
+          (sqltableAs)
+        | sqljoin JOIN sqltableAs ON sqlexp
+          (S.TABLE_JOIN (sqljoin,
+                         S.INNER_JOIN ({inner=false}, sqlexp),
+                         sqltableAs,
+                         (sqljoinleft, sqlexpright)))
+        | sqljoin INNER JOIN sqltableAs ON sqlexp
+          (S.TABLE_JOIN (sqljoin,
+                         S.INNER_JOIN ({inner=true}, sqlexp),
+                         sqltableAs,
+                         (sqljoinleft, sqlexpright)))
+        | sqljoin CROSS JOIN sqltableAs
+          (S.TABLE_JOIN (sqljoin, S.CROSS_JOIN, sqltableAs,
+                         (sqljoinleft, sqltableAsright)))
+        | sqljoin NATURAL JOIN sqltableAs
+          (S.TABLE_JOIN (sqljoin, S.NATURAL_JOIN, sqltableAs,
+                         (sqljoinleft, sqltableAsright)))
+
+sqltableAs
+        : sqltable AS label
+          (S.TABLE_AS (sqltable, label, (sqltableleft, labelright)))
+        | sqltable
+          (sqltable)
+
+sqltable
+        : sqltableid
+          (S.TABLE sqltableid)
+        | LPAREN sqljoin RPAREN
+          (sqljoin)
+        | LPAREN sqlopt sqlSelectQuery RPAREN
+          (S.TABLE_SUBQUERY
+             (sqlSelectQuery, (sqlSelectQueryleft, sqlSelectQueryright)))
+
+(*
+sqltableid
+        : HASH id PERIOD label
+          ({db = id, label = label, loc = (HASHleft, labelright)})
+*)
+sqltableid
+        : SELECTOR PERIOD label
+          ({db = {string = SELECTOR, loc=(SELECTORleft, SELECTORright)}, 
+            label = label, loc = (SELECTORleft, labelright)})
+
+sqlInsertCommand
+        : INSERT INTO sqltableid LPAREN labelseq RPAREN sqlInsertValues
+          (S.INSERT_LABELED (sqltableid,
+                             (labelseq, (labelseqleft, labelseqright)),
+                             sqlInsertValues))
+        | INSERT INTO sqltableid sqlSelectQuery
+          (S.INSERT_NOLABEL (sqltableid, sqlSelectQuery))
+
+labelseq
+        : label
+          (label :: nil)
+        | label COMMA labelseq
+          (label :: labelseq)
+
+sqlInsertValues
+        : VALUES sqlvalues
+          (S.INSERT_VALUES sqlvalues)
+        | VALUES OP longid
+          (S.INSERT_VAR (longid, (OPleft, longidright)))
+        | VALUES id_noSQL
+          (S.INSERT_VAR ([id_noSQL], (id_noSQLleft, id_noSQLright)))
+        | sqlSelectQuery
+          (S.INSERT_SELECT sqlSelectQuery)
+
+sqlvalues
+        : LPAREN sqlexpOrDefaultseq RPAREN
+          ((sqlexpOrDefaultseq, (LPARENleft, RPARENright)) :: nil)
+        | LPAREN sqlexpOrDefaultseq RPAREN COMMA sqlvalues
+          ((sqlexpOrDefaultseq, (LPARENleft, RPARENright)) :: sqlvalues)
+
+sqlexpOrDefaultseq
+        : sqlexpOrDefault
+          (sqlexpOrDefault :: nil)
+        | sqlexpOrDefault COMMA sqlexpOrDefaultseq
+          (sqlexpOrDefault :: sqlexpOrDefaultseq)
+
+sqlexpOrDefault
+        : sqlexp
+          ((SOME sqlexp, (sqlexpleft, sqlexpright)))
+        | DEFAULT
+          ((NONE, (DEFAULTleft, DEFAULTright)))
+
+sqlUpdateCommand
+        : UPDATE sqltableid SET sqlsetseq sqlWhereClauseOpt
+          (S.UPDATE (sqltableid,
+                     (sqlsetseq, (sqlsetseqleft, sqlsetseqright)),
+                     sqlWhereClauseOpt))
+
+sqlsetseq
+        : label EQ sqlexp
+          ((label, sqlexp) :: nil)
+        | label EQ sqlexp COMMA sqlsetseq
+          ((label, sqlexp) :: sqlsetseq)
+
+sqlDeleteCommand
+        : DELETE FROM sqltableid sqlWhereClauseOpt
+          (S.DELETE (sqltableid, sqlWhereClauseOpt))
+
+sqlexpseq
+        : sqlexp
+          (sqlexp :: nil)
+        | sqlexp COMMA sqlexpseq
+          (sqlexp :: sqlexpseq)
+
+sqltopexpseq
+        : sqltopexp
+          (sqltopexp :: nil)
+        | sqltopexp COMMA sqltopexpseq
+          (sqltopexp :: sqltopexpseq)
+
+sqltopexp
+        : sqlandexp
+          (sqlandexp)
+        | sqltopexp OR sqlandexp
+          (S.OP2 (S.OR, sqltopexp, sqlandexp, (sqltopexpleft, sqlandexpright)))
+
+sqlandexp
+        : sqlnotexp
+          (sqlnotexp)
+        | sqlandexp AND sqlnotexp
+          (S.OP2 (S.AND, sqlandexp, sqlnotexp, (sqlandexpleft, sqlnotexpright)))
+
+sqlnotexp
+        : sqlappexp
+          (sqlappexp)
+        | NOT sqlappexp
+          (S.OP1 (S.NOT, sqlappexp, (NOTleft, sqlappexpright)))
+
+sqlappexp
+        : sqlatexp
+          (sqlatexp)
+        | sqlappexp IS NULL
+          (S.OP1 (S.IS_NULL, sqlappexp, (sqlappexpleft, NULLright)))
+        | sqlappexp IS NOT NULL
+          (S.OP1 (S.IS_NOT_NULL, sqlappexp, (sqlappexpleft, NULLright)))
+        | sqlappexp IS TRUE
+          (S.OP1 (S.IS_TRUE, sqlappexp, (sqlappexpleft, TRUEright)))
+        | sqlappexp IS NOT TRUE
+          (S.OP1 (S.IS_NOT_TRUE, sqlappexp, (sqlappexpleft, TRUEright)))
+        | sqlappexp IS FALSE
+          (S.OP1 (S.IS_FALSE, sqlappexp, (sqlappexpleft, FALSEright)))
+        | sqlappexp IS NOT FALSE
+          (S.OP1 (S.IS_NOT_FALSE, sqlappexp, (sqlappexpleft, FALSEright)))
+        | sqlappexp IS UNKNOWN
+          (S.OP1 (S.IS_UNKNOWN, sqlappexp, (sqlappexpleft, UNKNOWNright)))
+        | sqlappexp IS NOT UNKNOWN
+          (S.OP1 (S.IS_NOT_UNKNOWN, sqlappexp, (sqlappexpleft, UNKNOWNright)))
+        | sqlappexp sqlatexp
+          (case sqlappexp of
+             S.APP (exps, loc) =>
+             S.APP (exps @ [sqlatexp], (sqlappexpleft, sqlatexpright))
+           | _ => S.APP ([sqlappexp, sqlatexp], (sqlappexpleft, sqlatexpright)))
+
+sqlatexp
+        : constant
+          (S.CONST constant)
+        | NULL
+          (S.NULL (NULLleft, NULLright))
+        | TRUE
+          (S.TRUE (TRUEleft, TRUEright))
+        | FALSE
+          (S.FALSE (FALSEleft, FALSEright))
+        | LPAREN RPAREN
+          (S.CONST (A.UNITCONST, (LPARENleft, RPARENright)))
+        | OP longid
+          (S.OPID (longid, (OPleft, longidright)))
+        | id_noSQL
+          (S.ID id_noSQL)
+        | SELECTOR PERIOD label
+          (S.COLUMN2 ((RecordLabel.fromString SELECTOR, label), (SELECTORleft, labelright)))
+(*
+        | HASH label PERIOD label
+          (S.COLUMN2 ((label1, label2), (label1left, label2right)))
+*)
+        | HASH PERIOD label
+          (S.COLUMN1 (label1, (HASHleft, labelright)))
+        | sqlopt sqlkwexp
+          (sqlkwexp)
+        | LPAREN sqltopexp RPAREN
+          (case sqltopexp of
+             S.ID x => S.PARENID x
+           | x => S.APP ([sqltopexp], (sqltopexpleft, sqltopexpright)))
+        | LPAREN sqlopt sqlSelectQuery RPAREN
+          (S.EXP_SUBQUERY (sqlSelectQuery, (sqloptleft, sqlSelectQueryright)))
+        | LPAREN PERIODS expOrSQL RPAREN
+          (S.EXP_EMBED (expOrSQL, (LPARENleft, RPARENright)))
+        | LPAREN sqltopexp COMMA sqltopexpseq RPAREN
+          (S.TUPLE ((sqltopexp :: sqltopexpseq, (LPARENleft, RPARENright))))
+
+sqlkwexp
+        : EXISTS LPAREN sqlopt sqlSelectQuery RPAREN
+          (S.EXISTS (sqlSelectQuery, (EXISTSleft, RPARENright)))
+
+sqlexp
+        : sqlnotexp
+          (sqlnotexp)
+        | sqlexp OR sqlnotexp
+          (S.OP2 (S.OR, sqlexp, sqlnotexp, (sqlexpleft, sqlnotexpright)))
+
+sqlparen
+        : sqlcon
+          (sqlcon)
+        | SQL sqlcon
+          (sqlcon)
+        | sqlcon SEMICOLON sqlconseq
+          (S.SEQ (S.CLAUSE (sqlcon, (sqlconleft, sqlconright)) :: sqlconseq))
+        | PERIODS LPAREN expOrSQL RPAREN SEMICOLON sqlconseq
+          (S.SEQ (S.EMBED (expOrSQL, (PERIODSleft, RPARENright)) :: sqlconseq))
+        | sqltopexp
+          (S.EXP sqltopexp)
+
+sqlpat
+        : sqlatpat
+          (A.PATAPPLY ([sqlatpat], (sqlatpatleft, sqlatpatright)))
+        | sqlpat COLON ty
+          (A.PATTYPED (sqlpat, ty, (sqlpatleft, tyright)))
+        | sqlpat AS pat
+          (A.PATLAYERED (sqlpat, pat, (sqlpatleft, patright)))
+
+sqlatpat
+        : atpat_noID_noPAREN
+          (atpat_noID_noPAREN)
+        | longid_noSQL
+          (A.PATID {opPrefix = false,longsymbol = longid_noSQL,
+                    loc = (longid_noSQLleft, longid_noSQLright)})
+
+(*************************** dec ********************************)
+(*decs : dec      ([dec])
+     | dec decs (dec::decs)*)
+decseq_semicolon
+        : (* none *)
+          ([])
+        | SEMICOLON decseq_semicolon
+          (decseq_semicolon)
+        | dec decseq_semicolon
+          (dec::decseq_semicolon)
+        | LOCAL decseq_semicolon IN decseq_semicolon END decseq_semicolon
+          (A.DECLOCAL
+             (decseq_semicolon1, decseq_semicolon2, (LOCALleft, ENDright))
+           :: decseq_semicolon3)
+
+(*
+  Ohori: VAL, VAL REC and FUN now take kinded_tyvarseq
+  instead of tyvar_seq.
+  2007/11/11
+*)
+
+(* 160 *)
+
+dec
+        : VAL valbind
+          (A.DECVAL (nil, valbind, (VALleft, valbindright)))
+        | VAL kinded_tyvarseq valbind
+          (A.DECVAL (kinded_tyvarseq, valbind, (VALleft, valbindright)))
+        | VAL REC valbind
+          (A.DECREC (nil, valbind, (VALleft, valbindright)))
+        | VAL REC kinded_tyvarseq valbind
+          (A.DECREC (kinded_tyvarseq, valbind, (VALleft, valbindright)))
+        (* polymorphic recursion *)
+        | VAL POLYREC pvalbind
+          (A.DECPOLYREC (pvalbind, (VALleft, pvalbindright)))
+        | FUN fvalbind
+          (A.DECFUN (nil, fvalbind, (FUNleft, fvalbindright)))
+        | FUN kinded_tyvarseq fvalbind
+          (A.DECFUN (kinded_tyvarseq, fvalbind, (FUNleft, fvalbindright)))
+        | TYPE typbind
+          (A.DECTYPE {tbs = typbind,
+                      loc = (TYPEleft, typbindright)})
+        | DATATYPE datbind
+          (A.DECDATATYPE {datatys = datbind,
+                          withtys = [],
+                          loc = (DATATYPEleft, datbindright)})
+        | DATATYPE datbind WITHTYPE typbind
+          (A.DECDATATYPE
+             {datatys = datbind,
+              withtys = typbind,
+              loc = (DATATYPEleft, typbindright)})
+        | DATATYPE tycon EQ DATATYPE longid
+          (A.DECREPLICATEDAT
+             {defSymbol = tycon,
+              refLongsymbol = longid,
+              loc = (DATATYPEleft, longidright)})
+        | ABSTYPE datbind WITH decseq_semicolon END
+          (A.DECABSTYPE
+             {abstys = datbind,
+              withtys = [],
+              body = (decseq_semicolon,
+                      (decseq_semicolonleft, decseq_semicolonright)),
+              loc = (ABSTYPEleft, ENDright)})
+        | ABSTYPE datbind WITHTYPE typbind
+          WITH decseq_semicolon END
+          (A.DECABSTYPE
+             {abstys = datbind,
+              withtys = typbind,
+              body = (decseq_semicolon,
+                      (decseq_semicolonleft, decseq_semicolonright)),
+              loc = (ABSTYPEleft, ENDright)})
+        | EXCEPTION exbinds
+          (A.DECEXN
+             {exbinds = exbinds,
+              loc = (EXCEPTIONleft, exbindsright)})
+(*
+    | LOCAL decseq_semicolon IN decseq_semicolon END
+      (A.LOCALDEC(decseq_semicolon1,decseq_semicolon2,(LOCALleft,ENDright)))
+*)
+        | OPEN longidseq
+          (A.DECOPEN (longidseq, (OPENleft, longidseqright)))
+        | INFIX int idseq
+          (A.DECINFIX (#digits int, idseq, (INFIXleft, idseqright)))
+        | INFIXR int idseq
+          (A.DECINFIXR (#digits int, idseq, (INFIXRleft, idseqright)))
+(*  infix/infixr without number is added. 2004.3.21. Ohori *)
+        | INFIX idseq
+          (A.DECINFIX ("0", idseq, (INFIXleft, idseqright)))
+        | INFIXR idseq
+          (A.DECINFIXR ("0", idseq, (INFIXRleft, idseqright)))
+        | NONFIX idseq
+          (A.DECNONFIX (idseq, (NONFIXleft, idseqright)))
+(*
+(*  deprecated syntax  *)
+    | VAL EXTERNAL ffiattropt id EQ appexp COLON old_ffiFunty
+        (A.DECVAL(nil,
+           [(A.PATID({opPrefix=false,id=[id],loc=(idleft,idright)}),
+             A.EXPFFIIMPORT
+               (appexp,
+                A.TYFFI(A.defaultFFIAttributes,
+                            ffiattropt,
+                            #1 old_ffiFunty,
+                            #2 old_ffiFunty,
+                            (old_ffiFuntyleft,old_ffiFuntyright)),
+                (appexpleft,old_ffiFuntyright)))],
+                      (VALleft,old_ffiFuntyright)))
+*)
+
+(*
+ In this version, we ignore kind constraint in type bind.
+   type ('a, 'b#{a:'a}) foo = 'b -> 'a
+ is interpreted as
+   type ('a, 'b) foo = 'b -> 'a
+*)
+typbind
+        : tycon EQ ty
+          ([{tyvars = nil,
+             tyConSymbol = tycon,
+             ty = (ty, (tyleft, tyright)),
+             loc = (tyconleft, tyright)}])
+        | tyvarseq tycon EQ ty
+          ([{tyvars = tyvarseq,
+             tyConSymbol = tycon,
+             ty = (ty, (tyleft, tyright)),
+             loc = (tyvarseqleft, tyright)}])
+        | tycon EQ ty AND typbind
+          ({tyvars = nil,
+            tyConSymbol = tycon,
+            ty = (ty, (tyleft, tyright)),
+            loc = (tyconleft, typbindright)}
+           :: typbind)
+        | tyvarseq tycon EQ ty AND typbind
+          ({tyvars = tyvarseq,
+            tyConSymbol = tycon,
+            ty = (ty, (tyleft, tyright)),
+            loc = (tyvarseqleft, typbindright)}
+           :: typbind)
+
+datbind
+        : tycon EQ combind
+          ([{tyvars = nil, tyConSymbol = tycon, rhs = combind,
+             loc = (tyconleft, combindright)}])
+        | tyvarseq tycon EQ combind
+          ([{tyvars = tyvarseq, tyConSymbol = tycon, rhs = combind,
+             loc = (tyvarseqleft, combindright)}])
+        | tycon EQ combind AND datbind
+          ({tyvars = nil, tyConSymbol = tycon, rhs = combind,
+            loc = (tyconleft, combindright)} :: datbind)
+        | tyvarseq tycon EQ combind AND datbind
+          ({tyvars = tyvarseq, tyConSymbol = tycon, rhs = combind,
+            loc = (tyvarseqleft, combindright)} :: datbind)
+
+combind
+        : condec
+          ([condec])
+        | condec BAR combind
+          (condec :: combind)
+
+condec
+        : tycon
+          ({opFlag = false,
+            conSymbol = tycon,
+            tyOpt = NONE,
+            loc = (tyconleft, tyconright)})
+        | OP tycon
+          ({opFlag = true,
+            conSymbol = tycon,
+            tyOpt = NONE,
+            loc = (OPleft, tyconright)})
+        | tycon OF ty
+          ({opFlag = false,
+            conSymbol = tycon,
+            tyOpt = SOME ty,
+            loc = (tyconleft, tyright)})
+        | OP tycon OF ty
+          ({opFlag = true,
+            conSymbol = tycon,
+            tyOpt = SOME ty,
+            loc = (OPleft, tyright)})
+
+exbinds
+        : exbind
+          ([exbind])
+        | exbind AND exbinds
+          (exbind :: exbinds)
+
+exbind
+        : exndec
+          (let
+             val (isOp, name, tyOpt) = exndec
+           in
+             A.EXBINDDEF
+               {opFlag = isOp,
+                conSymbol = name,
+                tyOpt = tyOpt,
+                loc = (exndecleft, exndecright)}
+           end)
+        | id EQ longid
+          (A.EXBINDREP
+             {opFlag1 = false,
+              conSymbol = id,
+              refLongsymbol = longid,
+              opFlag2 = false,
+              loc = (idleft, longidright)})
+        | id EQ OP longid
+          (A.EXBINDREP
+             {opFlag1 = false,
+              conSymbol = id,
+              opFlag2 = true,
+              refLongsymbol = longid,
+              loc = (idleft, longidright)})
+        | OP id EQ longid
+          (A.EXBINDREP
+             {opFlag1 = true,
+              conSymbol = id,
+              opFlag2 = false,
+              refLongsymbol = longid,
+              loc = (idleft, longidright)})
+        | OP id EQ OP longid
+          (A.EXBINDREP
+             {opFlag1 = true,
+              conSymbol = id,
+              opFlag2 = true,
+              refLongsymbol = longid,
+              loc = (idleft, longidright)})
+
+exndec
+        : tycon
+          ((false, tycon, NONE))
+        | OP tycon
+          ((true, tycon, NONE))
+        | tycon OF ty
+          ((false, tycon, SOME ty))
+        | OP tycon OF ty
+          ((true, tycon, SOME ty))
+
+(* 200 *)
+
+tyvar
+        : TYVAR
+          ({symbol = Symbol.mkSymbol TYVAR (TYVARleft, TYVARright),
+            isEq = false})
+        | EQTYVAR
+          ({symbol = Symbol.mkSymbol EQTYVAR (EQTYVARleft, EQTYVARright),
+            isEq = true})
+
+free_tyvar
+        : FREE_TYVAR
+          ({symbol = Symbol.mkSymbol
+                       FREE_TYVAR
+                       (FREE_TYVARleft, FREE_TYVARright),
+            isEq = false})
+        | FREE_EQTYVAR
+          ({symbol = Symbol.mkSymbol
+                       FREE_EQTYVAR
+                       (FREE_EQTYVARleft, FREE_EQTYVARright),
+            isEq=true})
+
+tyvarseq
+        : tyvar
+          ([tyvar])
+        | LPAREN tyvar RPAREN
+          ([tyvar])
+        | LPAREN tyvarseq_comma RPAREN
+          (tyvarseq_comma)
+
+tyvarseq_comma
+        : tyvar COMMA tyvar
+          ([tyvar1, tyvar2])
+        | tyvar COMMA tyvarseq_comma
+          (tyvar :: tyvarseq_comma)
+
+
+valbind
+        : pat EQ expOrSQL
+          ([(pat, expOrSQL, (patleft, expOrSQLright))])
+        | pat EQ expOrSQL AND valbind
+          ((pat, expOrSQL, (patleft, expOrSQLright)) :: valbind)
+
+pvalbind
+        : id COLON poly_ty EQ expOrSQL
+          ([(id, poly_ty, expOrSQL, (idleft, expOrSQLright))])
+        | id COLON poly_ty EQ expOrSQL AND pvalbind
+          ((id, poly_ty, expOrSQL, (idleft, expOrSQLright)) :: pvalbind)
+
+fvalbind
+        : frules
+          ([{fdecl=frules, loc=(frulesleft, frulesright)}])
+        | frules AND fvalbind
+          ({fdecl=frules, loc=(frulesleft, frulesright)} :: fvalbind)
+
+frules
+        : frule
+          ([frule])
+        | frule BAR frules
+          (frule::frules)
+
+frule
+        : apppat EQ expOrSQL
+          (apppat, NONE, expOrSQL, (apppatleft, expOrSQLright))
+        | apppat COLON ty EQ expOrSQL
+          (apppat, SOME ty, expOrSQL, (apppatleft, expOrSQLright))
+
+(*****************  pattern ***********************)
+
+atpat_noID_noPAREN
+        : UNDERBAR
+          (A.PATWILD (UNDERBARleft, UNDERBARright))
+        | OP patlongid
+          (A.PATID
+             {opPrefix = true,
+              longsymbol = patlongid,
+              loc = (patlongidleft, patlongidright)})
+        | constant
+          (A.PATCONSTANT constant)
+        | LBRACE RBRACE
+          (A.PATRECORD
+             {ifFlex = false, fields = nil, loc = (LBRACEleft, RBRACEright)})
+        | LBRACE fields RBRACE
+          (A.PATRECORD
+             {ifFlex = #1 fields,
+              fields = #2 fields,
+              loc = (LBRACEleft,RBRACEright)})
+        | LBRACKET RBRACKET
+          (A.PATLIST ([], (LBRACKETleft, RBRACKETright)))
+        | LBRACKET pat RBRACKET
+          (A.PATLIST ([pat], (LBRACKETleft, RBRACKETright)))
+        | LBRACKET patseq_comma RBRACKET
+          (A.PATLIST (patseq_comma, (LBRACKETleft, RBRACKETright)))
+
+atpat
+        : atpat_noID_noPAREN
+          (atpat_noID_noPAREN)
+        | patlongid
+          (A.PATID
+             {opPrefix = false,
+              longsymbol = patlongid,
+              loc = (patlongidleft, patlongidright)})
+        | LPAREN RPAREN
+          (A.PATCONSTANT (A.UNITCONST, (LPARENleft, RPARENright)))
+        | LPAREN patseq_comma RPAREN
+          (A.PATTUPLE (patseq_comma, (LPARENleft, RPARENright)))
+        | LPAREN pat RPAREN
+          (pat)
+
+apppat
+        : atpat
+          ([atpat])
+        | apppat atpat
+          (apppat @ [atpat])
+
+pat
+        : apppat
+          (A.PATAPPLY (apppat, (apppatleft, apppatright)))
+                (* Even if apppat has only single pattern, it is encupslated
+                 * into a PATAPPLY, in order to check invalid use of infix
+                 * identifier in the elaboration phase. *)
+        | pat COLON ty
+          (A.PATTYPED (pat, ty, (patleft, tyright)))
+        | pat AS pat
+          (A.PATLAYERED (pat1, pat2, (pat1left, pat2right)))
+
+optty
+        : COLON ty
+          (SOME ty)
+        | (* none *)
+          (NONE)
+
+fields
+        : label EQ pat
+          ((false, [A.PATROWPAT (label, pat, (labelleft, patright))]))
+        | id optty optaspat
+          ((false,
+            [A.PATROWVAR (id, optty, optaspat, (idleft, optaspatright))]))
+        | PERIODS
+          ((true, nil))
+        | label EQ pat COMMA fields
+          ((#1 fields,
+            A.PATROWPAT (label, pat, (labelleft, patright)) :: #2 fields))
+        | id optty optaspat COMMA fields
+          ((#1 fields,
+            A.PATROWVAR
+              (id, optty, optaspat, (idleft, optaspatright)) :: #2 fields))
+
+optaspat
+        : (* none *)
+          (NONE)
+        | AS pat
+          (SOME(pat))
+
+patseq_comma
+        : pat COMMA pat
+          ([pat1, pat2])
+        | patseq_comma COMMA pat
+          (patseq_comma @ [pat])
+
+(* end of pattern *)
+
+(****************  types *********************)
+tycon
+        : id_noEQSTAR
+          (id_noEQSTAR)
+        | EQ
+          (Symbol.mkSymbol "=" (EQleft, EQright))
+
+tyrow
+        : label COLON ty
+          ([(label, ty)])
+        | label COLON ty COMMA tyrow
+          ((label, ty) :: tyrow)
+
+tyrow_flex
+        : label COLON ty
+          ((false, [(label, ty)]))
+        | label COLON ty COMMA tyrow_flex
+          ((#1 tyrow_flex, (label,ty) :: #2 tyrow_flex))
+        | PERIODS
+          ((true, nil))
+
+ty0
+        : UNDERBAR
+          (A.TYWILD((UNDERBARleft,UNDERBARright)))
+        | tyvar
+          (A.TYID(tyvar,(tyvarleft,tyvarright)))
+        | kinded_free_tyvar
+          (A.FREE_TYID
+             {freeTvar = #1 kinded_free_tyvar,
+              tvarKind = #2 kinded_free_tyvar,
+              loc = (kinded_free_tyvarleft, kinded_free_tyvarright)})
+        | LBRACE tyrow_flex RBRACE
+          (A.TYRECORD
+             {ifFlex = #1 tyrow_flex,
+              fields = #2 tyrow_flex,
+              loc = (LBRACEleft, RBRACEright)})
+        | LBRACE RBRACE
+          (A.TYRECORD
+             {ifFlex = false,
+              fields = [],
+              loc = (LBRACEleft,RBRACEright)})
+        | LPAREN ty RPAREN
+          (ty)
+
+ty1
+        : ty0
+          (ty0)
+        | tyseq tylongid
+          (A.TYCONSTRUCT (tyseq, tylongid, (tyseqleft, tylongidright)))
+
+tyseq
+        : ty1
+          ([ty1])
+        | LPAREN tyseq_comma RPAREN
+          (tyseq_comma)
+        | (* none *)
+          (nil)
+
+tyseq_comma
+        : ty COMMA ty
+          ([ty1, ty2])
+        | ty COMMA tyseq_comma
+          (ty :: tyseq_comma)
+
+tytuple
+        : ty1 ASTERISK tytuple
+          (ty1 :: tytuple)
+        | ty1 ASTERISK ty1
+          ([ty11, ty12])
+
+ty
+        : ty ARROW ty
+          (A.TYFUN (ty1, ty2, (ty1left, ty2right)))
+        | tytuple
+          (A.TYTUPLE (tytuple, (tytupleleft, tytupleright)))
+        | ty1
+          (ty1)
+
+(*
+ Ohori; poly_ty and the related definitions are added for rank1 type
+  specification
+ 2007/11/11
+*)
+poly_tyrow
+        : label COLON poly_ty
+          ([(label, poly_ty)])
+        | label COLON poly_ty COMMA poly_tyrow
+          ((label, poly_ty) :: poly_tyrow)
+        | label COLON poly_ty COMMA tyrow
+          ((label, poly_ty) :: tyrow)
+        | label COLON ty COMMA poly_tyrow
+          ((label, ty) :: poly_tyrow)
+
+poly_ty1
+        : LBRACE poly_tyrow RBRACE
+          (A.TYRECORD
+             {ifFlex = false,
+              fields = poly_tyrow,
+              loc = (LBRACEleft, RBRACEright)})
+        | LPAREN poly_ty RPAREN
+          (poly_ty)
+        | LBRACKET kinded_tyvarseq_without_paren PERIOD ty RBRACKET
+          (A.TYPOLY
+             (kinded_tyvarseq_without_paren,
+              ty,
+              (LBRACKETleft, RBRACKETright)))
+        | LBRACKET kinded_tyvarseq_without_paren PERIOD poly_ty RBRACKET
+          (A.TYPOLY
+             (kinded_tyvarseq_without_paren,
+              poly_ty,
+              (LBRACKETleft,RBRACKETright)))
+
+poly_tytuple
+        : poly_ty1 ASTERISK poly_tytuple
+          (poly_ty1 :: poly_tytuple)
+        | poly_ty1 ASTERISK tytuple
+          (poly_ty1 :: tytuple)
+        | poly_ty1 ASTERISK poly_ty1
+          ([poly_ty11, poly_ty12])
+        | poly_ty1 ASTERISK ty1
+          ([poly_ty1, ty1])
+        | ty1 ASTERISK poly_tytuple
+          (ty1 :: poly_tytuple)
+        | ty1 ASTERISK poly_ty1
+          ([ty1, poly_ty1])
+
+poly_ty
+        : ty ARROW poly_ty
+          (A.TYFUN(ty, poly_ty, (tyleft, poly_tyright)))
+        | poly_tytuple
+          (A.TYTUPLE (poly_tytuple, (poly_tytupleleft, poly_tytupleright)))
+        | poly_ty1
+          (poly_ty1)
+
+kindSeq
+        : HASH LBRACE RBRACE
+          ({properties = nil, recordKind = SOME nil})
+        | HASH LBRACE tyrow RBRACE
+          ({properties = nil, recordKind = SOME tyrow})
+        | SELECTOR
+          ({properties = [SELECTOR], recordKind = NONE})
+        | SELECTOR kindSeq
+          ({properties = SELECTOR :: #properties kindSeq,
+            recordKind = #recordKind kindSeq})
+(*
+        | HASH ALPHABETICID
+          ({properties = [ALPHABETICID], recordKind = NONE})
+        | HASH ALPHABETICID kindSeq
+          ({properties = ALPHABETICID :: #properties kindSeq,
+            recordKind = #recordKind kindSeq})
+*)
+kinded_tyvar
+        : tyvar
+          (tyvar, A.UNIV (nil, (tyvarleft, tyvarright)))
+        | tyvar kindSeq
+          (tyvar,
+           case kindSeq of
+             {properties, recordKind = NONE} =>
+             A.UNIV (properties, (kindSeqleft, kindSeqright))
+           | {properties, recordKind = SOME recordKind} =>
+             A.REC ({properties = properties, recordKind = recordKind},
+                    (kindSeqleft, kindSeqright)))
+
+kinded_free_tyvar
+        : free_tyvar
+          (free_tyvar, A.UNIV (nil, (free_tyvarleft, free_tyvarright)))
+        | free_tyvar kindSeq
+          (free_tyvar,
+           case kindSeq of
+             {properties, recordKind = NONE} =>
+             A.UNIV (properties, (kindSeqleft, kindSeqright))
+           | {properties, recordKind = SOME recordKind} =>
+             A.REC ({properties = properties, recordKind = recordKind},
+                    (kindSeqleft, kindSeqright)))
+
+kinded_tyvarseq
+        : kinded_tyvar
+          ([kinded_tyvar])
+        | LPAREN kinded_tyvar RPAREN
+          ([kinded_tyvar])
+        | LPAREN kinded_tyvarseq_comma RPAREN
+          (kinded_tyvarseq_comma)
+
+kinded_tyvarseq_comma
+        : kinded_tyvar COMMA kinded_tyvar
+          ([kinded_tyvar1,kinded_tyvar2])
+        | kinded_tyvar COMMA kinded_tyvarseq_comma
+          (kinded_tyvar :: kinded_tyvarseq_comma)
+
+kinded_tyvarseq_without_paren
+        : kinded_tyvar
+          ([kinded_tyvar])
+        | kinded_tyvar COMMA kinded_tyvarseq_without_paren
+          (kinded_tyvar :: kinded_tyvarseq_without_paren)
+(* kinded tyvar end *)
+
+(****************  end of types *********************)
+
+(*********** foreign function interface *************)
+
+(* FFI type representation *)
+
+ffityrow
+        : label COLON ffity
+          ([(label, ffity)])
+        | label COLON ffity COMMA ffityrow
+          ((label, ffity) :: ffityrow)
+
+ffityseq
+        : ffity COMMA ffity
+          ([ffity1, ffity2])
+        | ffity COMMA ffityseq
+          (ffity :: ffityseq)
+
+ffiVarArgs
+        : (* none *)
+          ([])
+        | ffity
+          ([ffity])
+        | ffity COMMA ffiVarArgs
+          (ffity::ffiVarArgs)
+
+ffity_COMMA
+        : ffity COMMA
+          (ffity)
+
+ffityseq_COMMA
+        : ffity COMMA ffity COMMA
+          ([ffity1, ffity2])
+        | ffity COMMA ffityseq_COMMA
+          (ffity :: ffityseq_COMMA)
+
+ffiArgs
+        : ffiAtty
+          (([ffiAtty], NONE))
+        | LPAREN ffityseq RPAREN
+          ((ffityseq, NONE))
+        | LPAREN ffity_COMMA PERIODS LPAREN ffiVarArgs RPAREN RPAREN
+          ([ffity_COMMA], SOME ffiVarArgs)
+        | LPAREN ffityseq_COMMA PERIODS LPAREN ffiVarArgs RPAREN RPAREN
+          (ffityseq_COMMA, SOME ffiVarArgs)
+
+ffiContyArg
+        : (* none *)
+          (nil)
+        | ffiAtty
+          ([ffiAtty])
+        | LPAREN ffityseq RPAREN
+          (ffityseq)
+
+ffiAtty
+        : LPAREN ffity RPAREN
+          (ffity)
+        | tyvar
+          (A.FFITYVAR (tyvar, (tyvarleft, tyvarright)))
+        | ffiContyArg tylongid
+          (A.FFICONTY (ffiContyArg, tylongid, (ffiContyArgleft, tylongidright)))
+        | LBRACE ffityrow RBRACE
+          (A.FFIRECORDTY (ffityrow, (LBRACEleft, RBRACEright)))
+        | LBRACE RBRACE
+          (A.FFIRECORDTY ([], (LBRACEleft, RBRACEright)))
+
+ffitupleseq
+        : ffiAtty ASTERISK ffiAtty
+          ([ffiAtty1, ffiAtty2])
+        | ffiAtty ASTERISK ffitupleseq
+          (ffiAtty :: ffitupleseq)
+
+ffiTupleTy
+        : ffitupleseq
+          (A.FFITUPLETY (ffitupleseq, (ffitupleseqleft, ffitupleseqright)))
+
+ffiFunArg
+        : LPAREN RPAREN
+          (([], NONE))
+        | ffiArgs
+          (ffiArgs)
+        | ffiTupleTy
+          (([ffiTupleTy], NONE))
+
+ffiFunRet
+        : LPAREN RPAREN
+          ([])
+        | ffity
+          ([ffity])
+        | LPAREN ffityseq RPAREN
+          (ffityseq)
+
+ffiFunty
+        : ffiFunArg ARROW ffiFunRet
+          (A.FFIFUNTY (nil, #1 ffiFunArg, #2 ffiFunArg, ffiFunRet,
+                       (ffiFunArgleft, ffiFunRetright)))
+        | ffiattr ffiFunArg ARROW ffiFunRet
+          (A.FFIFUNTY (ffiattr, #1 ffiFunArg, #2 ffiFunArg, ffiFunRet,
+                       (ffiFunArgleft,ffiFunRetright)))
+
+ffiattrseq
+        : ALPHABETICID
+          ([ALPHABETICID])
+        | ALPHABETICID COMMA ffiattrseq
+          (ALPHABETICID :: ffiattrseq)
+
+ffiattr
+        : ATTRIBUTE LPAREN LPAREN ffiattrseq RPAREN RPAREN
+          (ffiattrseq)
+
+ffity
+        : ffiAtty
+          (ffiAtty)
+        | ffiFunty
+          (ffiFunty)
+        | ffiTupleTy
+          (ffiTupleTy)
+
+(*
+(* deperecated syntax *)
+old_ffiContyArg : (nil)
+                | old_ffiAtty ([old_ffiAtty])
+                | LPAREN old_ffityseq RPAREN (old_ffityseq)
+old_ffiAtty : LPAREN old_ffity RPAREN (old_ffity)
+            | old_ffiContyArg tyid
+                (A.TYCONSTRUCT(old_ffiContyArg,tyid,(tyidleft,tyidright)))
+old_ffituple : old_ffiAtty ASTERISK old_ffiAtty ([old_ffiAtty1,old_ffiAtty2])
+             | old_ffiAtty ASTERISK old_ffituple (old_ffiAtty::old_ffituple)
+old_ffityseq : old_ffity COMMA old_ffity ([old_ffity1,old_ffity2])
+             | old_ffity COMMA old_ffityseq (old_ffity::old_ffityseq)
+old_ffityArg : (nil)
+             | old_ffity ([old_ffity])
+             | old_ffityseq (old_ffityseq)
+old_ffiFunty : LBRACE old_ffityArg RBRACE ARROW old_ffity ((old_ffityArg, old_ffity))
+old_ffity : old_ffiAtty (old_ffiAtty)
+          | old_ffiFunty (A.TYFFI(A.defaultFFIAttributes,nil,
+                                      #1 old_ffiFunty,#2 old_ffiFunty,
+                                      (old_ffiFuntyleft,old_ffiFuntyright)))
+          | old_ffituple (A.TYTUPLE(old_ffituple,(old_ffitupleleft,old_ffitupleright)))
+*)
+
+(**************** structure and signature************)
+
+(*----strexp---*)
+strexpbasic
+        : STRUCT strdecseq_semicolon END
+          (A.STREXPBASIC (strdecseq_semicolon, (STRUCTleft, ENDright)))
+        | longid
+          (A.STRID (longid, (longidleft, longidright)))
+        | id LPAREN strexp RPAREN
+          (A.FUNCTORAPP (id, strexp, (idleft, RPARENright)))
+        | id LPAREN strdecseq_semicolon RPAREN
+          (A.FUNCTORAPP
+             (id,
+              A.STREXPBASIC
+                (strdecseq_semicolon,
+                 (strdecseq_semicolonleft, strdecseq_semicolonright)),
+              (idleft, RPARENright)))
+        | LET strdecseq_semicolon IN strexp END
+          (A.STRUCTLET (strdecseq_semicolon, strexp, (LETleft, ENDright)))
+
+strexp
+        : strexpbasic
+          (strexpbasic)
+        | strexp COLON sigexp
+          (A.STRTRANCONSTRAINT (strexp, sigexp, (strexpleft, sigexpright)))
+        | strexp OPAQUE sigexp
+          (A.STROPAQCONSTRAINT (strexp, sigexp, (strexpleft,sigexpright)))
+
+strexpand
+        : strexpbasic AND
+          (strexpbasic)
+        | strexp COLON sigexpand
+          (A.STRTRANCONSTRAINT
+             (strexp, sigexpand, (strexpleft, sigexpandright)))
+        | strexp OPAQUE sigexpand
+          (A.STROPAQCONSTRAINT
+             (strexp, sigexpand, (strexpleft, sigexpandright)))
+
+(*-------------*)
+
+strdecseq_semicolon
+        : strdec strdecseq_semicolon
+          (strdec :: strdecseq_semicolon)
+        | SEMICOLON strdecseq_semicolon
+          (strdecseq_semicolon)
+        | (* none *)
+          ([])
+
+strdec
+        : dec
+          (A.COREDEC (dec, (decleft, decright)))
+        | STRUCTURE strbindseq
+          (A.STRUCTBIND (strbindseq, (STRUCTUREleft, strbindseqright)))
+        | LOCAL strdecseq_semicolon IN strdecseq_semicolon END
+          (A.STRUCTLOCAL
+             (strdecseq_semicolon1,
+              strdecseq_semicolon2,
+              (LOCALleft, ENDright)))
+
+(*-----strbind-----*)
+strbind
+        : alphabetic_id EQ strexp
+          (A.STRBINDNONOBSERV
+             (alphabetic_id, strexp, (alphabetic_idleft, strexpright)))
+        | alphabetic_id COLON sigexp EQ strexp
+          (A.STRBINDTRAN
+             (alphabetic_id, sigexp, strexp, (alphabetic_idleft, strexpright)))
+        | alphabetic_id OPAQUE sigexp EQ strexp
+          (A.STRBINDOPAQUE
+             (alphabetic_id, sigexp, strexp, (alphabetic_idleft, strexpright)))
+
+strbindand
+        : alphabetic_id EQ strexpand
+          (A.STRBINDNONOBSERV
+             (alphabetic_id, strexpand, (alphabetic_idleft, strexpandright)))
+        | alphabetic_id COLON sigexp EQ strexpand
+          (A.STRBINDTRAN
+             (alphabetic_id,
+              sigexp,
+              strexpand,
+              (alphabetic_idleft, strexpandright)))
+        | alphabetic_id OPAQUE sigexp EQ strexpand
+          (A.STRBINDOPAQUE
+             (alphabetic_id,
+              sigexp,
+              strexpand,
+              (alphabetic_idleft, strexpandright)))
+
+strbindseq
+        : strbind
+          ([strbind])
+        | strbindand strbindseq
+          (strbindand :: strbindseq)      (*TEST*)
+
+(*---sigexp-----*)
+sigexpbasic
+        : SIG spec END
+          (A.SIGEXPBASIC (spec, (SIGleft, ENDright)))
+        | alphabetic_id
+          (A.SIGID (alphabetic_id, (alphabetic_idleft, alphabetic_idright)))
+
+sigexpwhere
+        : sigexp WHERE TYPE tyvarseq longid EQ ty
+          (A.SIGWHERE (sigexp, (tyvarseq, longid, ty), (sigexpleft, tyright)))
+        | sigexp WHERE TYPE longid EQ ty
+          (A.SIGWHERE (sigexp, (nil, longid, ty), (sigexpleft, tyright)))
+        | sigexpwhere AND TYPE tyvarseq longid EQ ty
+          (A.SIGWHERE (sigexpwhere,
+                       (tyvarseq, longid, ty),
+                       (sigexpwhereleft, tyright)))
+        | sigexpwhere AND TYPE longid EQ ty
+          (A.SIGWHERE (sigexpwhere,
+                       (nil, longid, ty),
+                       (sigexpwhereleft, tyright)))
+
+sigexp
+        : sigexpbasic
+          (sigexpbasic)
+        | sigexpwhere
+          (sigexpwhere)
+
+sigexpand
+        : sigexpwhere AND
+          (sigexpwhere)
+        | sigexpbasic AND
+          (sigexpbasic)
+
+(*---sigexp-----*)
+
+sigbind
+        : alphabetic_id EQ sigexp
+          ([(alphabetic_id, sigexp)])
+        | alphabetic_id EQ sigexpand sigbind
+          ((alphabetic_id, sigexpand) :: sigbind)
+
+(***********************specifications******************************)
+
+longtyconeqrow
+        : longid EQ longid
+          ([longid1, longid2])
+        | longid EQ longtyconeqrow
+          (longid :: longtyconeqrow)
+
+longideqrow
+        : longid EQ longid
+          ([longid1, longid2])
+        | longid EQ longid EQ longid
+          ([longid1, longid2, longid3])
+        | longid EQ longid EQ longideqrow
+          (longid1 :: longid2 :: longideqrow)
+
+spec
+        : spec atomicspec
+          (A.SPECSEQ (spec, atomicspec, (specleft, atomicspecright)))
+        | spec SHARING TYPE longtyconeqrow
+          (A.SPECSHARE
+             (spec, longtyconeqrow, (SHARINGleft, longtyconeqrowright)))
+        | spec SHARING longideqrow
+          (A.SPECSHARESTR
+             (spec, longideqrow, (SHARINGleft, longideqrowright)))
+        | spec SEMICOLON
+          (spec)
+        | (* none *)
+          (A.SPECEMPTY)
+
+atomicspec
+        : VAL valdesc
+          (A.SPECVAL (valdesc, (VALleft, valdescright)))
+        | TYPE typdesc
+          (A.SPECTYPE (typdesc, (TYPEleft, typdescright)))
+        | TYPE typbind
+          (A.SPECDERIVEDTYPE
+             (map (fn {tyvars, tyConSymbol, ty = (ty, _), loc} =>
+                      (tyvars, tyConSymbol, ty))
+                  typbind,
+              (TYPEleft, typbindright)))
+        | EQTYPE typdesc
+          (A.SPECEQTYPE (typdesc, (EQTYPEleft, typdescright)))
+        | DATATYPE datdesc
+          (A.SPECDATATYPE (datdesc, (DATATYPEleft, datdescright)))
+        | DATATYPE tycon EQ DATATYPE longid
+          (A.SPECREPLIC (tycon, longid, (DATATYPE1left, longidright)))
+        | EXCEPTION exdesc
+          (A.SPECEXCEPTION (exdesc, (EXCEPTIONleft, exdescright)))
+        | STRUCTURE strdesc
+          (A.SPECSTRUCT (strdesc, (STRUCTUREleft, strdescright)))
+        | INCLUDE SIG spec END
+          (A.SPECINCLUDE (A.SIGEXPBASIC (spec, (SIGleft, ENDright)),
+                          (INCLUDEleft, ENDright)))
+        | INCLUDE sigexpwhere
+          (A.SPECINCLUDE (sigexpwhere, (INCLUDEleft, sigexpwhereright)))
+        | INCLUDE sigidseq
+          (A.SPECDERIVEDINCLUDE (sigidseq, (INCLUDEleft, sigidseqright)))
+
+sigidseq
+        : id
+          ([id1])
+        | id sigidseq
+          (id1::sigidseq)
+
+(*
+  Ohori: valdesc now take poly_ty
+  2007/11/11
+*)
+valdesc
+        : id COLON poly_ty
+          ([(id, poly_ty)])
+        | id COLON ty
+          ([(id, ty)])
+        | id COLON poly_ty AND valdesc
+          ((id, poly_ty) :: valdesc)
+        | id COLON ty AND valdesc
+          ((id, ty) :: valdesc)
+(* 401 *)
+
+typdesc
+        : tyvarseq tycon
+          ([(tyvarseq, tycon)])
+        | tycon
+          ([(nil, tycon)])
+        | tyvarseq tycon AND typdesc
+          ((tyvarseq, tycon) :: typdesc)
+        | tycon AND typdesc
+          ((nil, tycon) :: typdesc)
+
+datdesc
+        : tycon EQ condesc
+          ([(nil, tycon, condesc, (tyconleft, condescright))])
+        | tyvarseq tycon EQ condesc
+          ([(tyvarseq, tycon, condesc, (tyvarseqleft, condescright))])
+        | tycon EQ condesc AND datdesc
+          ((nil, tycon, condesc, (tyconleft, condescright)) :: datdesc)
+        | tyvarseq tycon EQ condesc AND datdesc
+          ((tyvarseq, tycon, condesc, (tyvarseqleft, condescright)) :: datdesc)
+
+condesc
+        : id
+          ([(id, NONE, (idleft, idright))])
+        | id OF ty
+          ([(id, SOME ty, (idleft, tyright))])
+        | id BAR condesc
+          ((id, NONE, (idleft, idright)) :: condesc)
+        | id OF ty BAR condesc
+          ((id, SOME ty, (idleft, tyright)) :: condesc)
+
+exdesc
+        : id
+          ([(id, NONE, (idleft, idright))])
+        | id OF ty
+          ([(id, SOME ty, (idleft, tyright))])
+        | id AND exdesc
+          ((id, NONE, (idleft, idright)) :: exdesc)
+        | id OF ty AND exdesc
+          ((id, SOME ty, (idleft, tyright)) :: exdesc)
+
+strdesc
+        : id COLON sigexp
+          ([(id, sigexp)])
+        | id COLON sigexpand strdesc
+          ((id, sigexpand) :: strdesc)
+
+funbindseq
+        : funbind
+          ([funbind])
+        | funbindand funbindseq
+          (funbindand :: funbindseq)
+
+funbind
+        : id LPAREN id COLON sigexp RPAREN EQ strexp
+          (A.FUNBINDNONOBSERV
+             (id1, id2, sigexp, strexp, (id1left, strexpright)))
+        | id LPAREN id COLON sigexp RPAREN COLON sigexp EQ strexp
+          (A.FUNBINDTRAN
+             (id1, id2, sigexp1, sigexp2, strexp, (id1left, strexpright)))
+        | id LPAREN id COLON sigexp RPAREN OPAQUE sigexp EQ strexp
+          (A.FUNBINDOPAQUE
+             (id1, id2, sigexp1, sigexp2, strexp, (id1left, strexpright)))
+        | id LPAREN spec RPAREN EQ strexp
+          (A.FUNBINDSPECNONOBSERV
+             (id, spec, strexp, (idleft, strexpright)))
+        | id LPAREN spec RPAREN COLON sigexp EQ strexp
+          (A.FUNBINDSPECTRAN
+             (id, spec, sigexp, strexp, (idleft, strexpright)))
+        | id LPAREN spec RPAREN OPAQUE sigexp EQ strexp
+          (A.FUNBINDSPECOPAQUE
+             (id, spec, sigexp, strexp, (idleft, strexpright)))
+
+funbindand
+        : id LPAREN id COLON sigexp RPAREN EQ strexpand
+          (A.FUNBINDNONOBSERV
+             (id1, id2, sigexp, strexpand, (id1left, strexpandright)))
+        | id LPAREN id COLON sigexp RPAREN COLON sigexp EQ strexpand
+          (A.FUNBINDTRAN
+             (id1, id2, sigexp1, sigexp2, strexpand, (id1left, strexpandright)))
+        | id LPAREN id COLON sigexp RPAREN OPAQUE sigexp EQ strexpand
+          (A.FUNBINDOPAQUE
+             (id1, id2, sigexp1, sigexp2, strexpand, (id1left, strexpandright)))
+        | id LPAREN spec RPAREN EQ strexpand
+          (A.FUNBINDSPECNONOBSERV
+             (id, spec, strexpand, (idleft, strexpandright)))
+        | id LPAREN spec RPAREN COLON sigexp EQ strexpand
+          (A.FUNBINDSPECTRAN
+             (id, spec, sigexp, strexpand, (idleft, strexpandright)))
+        | id LPAREN spec RPAREN OPAQUE sigexp EQ strexpand
+          (A.FUNBINDSPECOPAQUE
+             (id, spec, sigexp, strexpand, (idleft, strexpandright)))
+
+(*****************************top level declarations**************************)
+
+topdecs
+        : topdec
+          ([topdec])
+        | topdec topdecs
+          (topdec :: topdecs)
+
+topdec
+        : strdec
+          (A.TOPDECSTR (strdec, (strdecleft, strdecright)))
+        | SIGNATURE sigbind
+          (A.TOPDECSIG (sigbind, (SIGNATUREleft, sigbindright)))
+        | FUNCTOR funbindseq
+          (A.TOPDECFUN (funbindseq, (FUNCTORleft, funbindseqright)))
+
+useFile
+        : USE STRING
+          (A.USE (RequirePath.fromString STRING, (USEleft, STRINGright)))
+        | USE' STRING
+          (A.USE (RequirePath.fromString STRING, (USE'left, STRINGright)))
+
+tops
+        : topdecs
+          ([A.TOPDEC topdecs])
+        | useFile
+          ([useFile])
+        | topdecs useFile tops
+          (A.TOPDEC topdecs :: useFile :: tops)
+        | useFile tops
+          (useFile :: tops)
+
+interface
+        : (* none *)
+          (A.NOINTERFACE)
+        | INTERFACE STRING
+          (A.INTERFACE
+             (RequirePath.fromString STRING, (INTERFACEleft, STRINGright)))
+
+unit
+        : interface
+          ({interface = interface,
+            tops = nil,
+            loc = (interfaceleft, interfaceright)})
+        | interface tops
+          ({interface = interface,
+            tops = tops,
+            loc = (interfaceleft, topsright)})

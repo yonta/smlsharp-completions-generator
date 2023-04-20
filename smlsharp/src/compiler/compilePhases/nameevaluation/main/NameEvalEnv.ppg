@@ -1,0 +1,813 @@
+(**
+ * @copyright (C) 2021 SML# Development Team.
+ * @author Atsushi Ohori
+ *)
+(* the initial error code of this file : V-001
+  The printer prefix "printTy_" is used to print types and signature 
+  in the interactive mode.
+ *)
+structure NameEvalEnv =
+struct
+local
+  structure I = IDCalc
+  structure E = NameEvalError
+  structure EU = UserErrorUtils
+  fun bug s = Bug.Bug ("NameEvalEnv: " ^ s)
+
+  (*%
+      @formatter(I.tfun) I.formatWithType_tfun
+   *)
+  (*% @prefix printTy_
+      @params(sname,mode,name)
+      @formatter(I.tfun) I.print_tfun
+   *)
+  type tfun
+    = 
+      (*%
+          @format(x)  x
+       *) 
+      (*% @prefix printTy_
+          @format(x)  x()(sname,mode,name)
+       *) 
+      I.tfun
+
+  (*%
+      @formatter(I.conSpec) I.formatWithType_conSpec
+   *)
+  (*% @prefix printTy_
+      @params(sname,mode,name)
+      @formatter(I.conSpec) I.print_conSpec
+   *)
+  type conSpec
+    = 
+      (*%
+         @format(x)  x
+       *) 
+      (*% @prefix printTy_
+         @format(x)  x()(sname,mode,name)
+       *) 
+      I.conSpec
+
+  (*%
+      @formatter(I.formals) I.format_formals
+   *)
+  (*% @prefix printTy_
+      @formatter(I.formals) I.print_formals
+   *)
+  type formals
+    = 
+      (*%
+         @format(x)  x
+       *)
+      (*% @prefix printTy_
+         @format(x)  x
+       *)
+      I.formals
+
+  (*%
+      @formatter(I.varE) I.formatWithType_varE
+   *)
+  (*% @prefix printTy_
+      @params(sname,mode,name)
+      @formatter(I.varE) I.print_varE
+   *)
+  type varE
+    = 
+      (*%
+          @format(x)  x
+       *)
+      (*% @prefix printTy_
+          @format(x)
+            x()(sname,mode,name)
+       *)
+      I.varE
+
+  (*%
+      @formatter(I.typId) I.print_typId
+   *)
+  (*% @prefix printTy_
+      @formatter(I.typId) I.print_typId
+   *)
+  type typId
+     = 
+       (*%
+          @format(x)  x
+        *) 
+       (*% @prefix printTy_
+          @format(x)  x
+        *) 
+       I.typId
+
+  (*%
+      @formatter(I.exnId) I.print_exnId
+   *)
+  (*% @prefix printTy_
+      @formatter(I.exnId) I.print_exnId
+   *)
+  type exnId
+    = 
+      (*%
+          @format(x)  x
+       *) 
+      (*% @prefix printTy_
+          @format(x)  x
+       *) 
+      I.exnId
+
+  (*%
+      @formatter(StructureID.id) StructureID.format_id
+   *)
+  (*% @prefix printTy_
+      @formatter(StructureID.id) StructureID.format_id
+   *)
+  (* structure name *)
+  type structureId 
+    = 
+      (*%
+          @format(id) "s" id
+       *)
+      (*% @prefix printTy_
+          @format(id) "s" id
+       *)
+      StructureID.id
+
+  (*%
+      @formatter(SignatureID.id) SignatureID.format_id
+   *)
+  (*% @prefix printTy_
+      @formatter(SignatureID.id) SignatureID.format_id
+   *)
+  (* signature name *)
+  type signatureId 
+    = 
+      (*%
+          @format(id) "s" id
+       *)
+      (*% @prefix printTy_
+          @format(id) "s" id
+       *)
+      SignatureID.id
+
+  (*%
+     @formatter(FunctorID.id) FunctorID.format_id
+   *)
+  (*% @prefix printTy_
+     @formatter(FunctorID.id) FunctorID.format_id
+   *)
+  (* functor name *)
+  type functorId
+    = 
+      (*%
+         @format(id) "f" id
+       *)
+      (*% @prefix printTy_
+         @format(id) "f" id
+       *)
+      FunctorID.id
+
+  (*%
+      @formatter(I.tvar) I.print_tvar
+   *)
+  (*% @prefix printTy_
+      @formatter(I.tvar) I.print_tvar
+   *)
+  type tvar
+    = 
+      (*%
+          @format(x)  x
+       *)
+      (*% @prefix printTy_
+          @format(x)  x
+       *)
+      I.tvar
+  (*%
+     @formatter(I.ty) I.format_ty
+   *)
+  (*% @prefix printTy_
+     @params(sname,mode,name)
+     @formatter(I.ty) I.print_ty
+   *)
+  type ty
+    = 
+      (*%
+         @format(x)  x
+       *)
+      (*% @prefix printTy_
+         @format(x)  x()(sname,mode,name)
+       *)
+      I.ty
+
+  (*%
+      @formatter(I.varInfo) I.print_varInfo
+    *)
+  (*% @prefix printTy_
+      @formatter(I.varInfo) I.print_varInfo
+    *)
+  type varInfo
+    = 
+      (*%
+          @format(x)  x
+       *)
+      (*% @prefix printTy_
+          @format(x)  x
+       *)
+      I.varInfo
+
+  fun formatEnclosedSet listItems (format, lparen, comma, rparen) map =
+      TermFormat.formatOptionalList
+        (fn value => format value, lparen, comma, rparen)
+        (listItems map)
+
+  fun formatEnclosedTypidSet (lparen, comma, rparen)  map =
+      formatEnclosedSet
+        TypID.Set.listItems 
+        (format_typId, lparen, comma, rparen)
+        map
+  fun formatEnclosedExnIdSet (lparen, comma, rparen)  map =
+      formatEnclosedSet
+        ExnID.Set.listItems 
+        (format_exnId, lparen, comma, rparen)
+        map
+
+  fun preferSecond arg =
+      case arg of
+        (NONE, SOME (key2, v2)) => (key2, v2)
+      | (SOME (key1, v1), NONE) => (key1, v1)
+      | (SOME _, SOME (key2, v2)) => (key2, v2)
+      | (NONE, NONE) => raise bug "none in unionWith3"
+
+in
+  type varE = varE
+
+  (*%
+     @formatter(bool) SmlppgUtil.formatBinaryChoice
+   *)
+  (*% @prefix printTy_
+     @params(sname,mode,name)
+     @formatter(bool) SmlppgUtil.formatBinaryChoice
+   *)
+   (* type structure *)
+  datatype tstr
+    = 
+      (*%
+        @format({tfun, defRange}) 
+          1["tystr" +1 tfun] 
+       *)
+      (*% @prefix printTy_
+        @format({tfun, defRange}) {tfun()(sname,,name)}
+       *)
+       TSTR of {tfun:tfun, defRange:Loc.loc}
+    | 
+      (*%
+        @format({tfun, varE, formals, conSpec, defRange})
+          "dtystr"
+            +
+          "{" 
+             1[ 
+               +1
+                1["tfun:"+1 tfun]
+(*
+               +1             
+                1["varE:"+1 varE]
+               +1
+                1["formals:"+1 formals]
+               +1
+                1["conSpec:"+1 conSpec]
+*)
+              ]
+             1
+           "}"
+       *)
+      (*% @prefix printTy_
+        @format({tfun, varE, formals, conSpec, defRange})
+           {tfun()(sname,"dty",name)}
+       *)
+       TSTR_DTY of {tfun:tfun, varE:varE, formals:formals, conSpec:conSpec, defRange:Loc.loc}
+
+  (*%
+     @formatter(SymbolEnv.map) TermFormat.formatEnclosedSymbolEnvPlain
+   *)
+  (*% @prefix printTy_
+     @params(sname,mode,name)
+     @formatter(SymbolEnv.map) SmlppgUtil.formatGenericSymbolMap
+   *)
+  (* type environment *)
+  type tyE
+    = 
+      (*%
+        @format(tstr senv) 
+          "{"
+           1[
+             senv(tstr)(1, ":"+)
+            ]
+           1
+          "}"
+       *)
+      (*% @prefix printTy_
+        @format(tstr senv) 
+           senv(tstr)(sname,\n,\n,)
+       *)
+      tstr SymbolEnv.map
+
+
+  (*%
+     @formatter(SymbolEnv.map) TermFormat.formatEnclosedSsymbolEnvPlain
+   *)
+  (*% @prefix printTy_
+     @formatter(SymbolEnv.map) TermFormat.formatEnclosedSymbolEnvPlain
+   *)
+  (* structure environment *)
+  datatype strKind 
+    = 
+      (*%
+        @format(id) "signature(" id ")"
+       *)
+      (*% @prefix printTy_
+        @format(id) "signature(" id ")"
+       *)
+      SIGENV of signatureId
+    | 
+      (*%
+        @format(id) "structure(" id ")" 
+       *)
+      (*% @prefix printTy_
+        @format(id) "structure(" id ")" 
+       *)
+      STRENV of structureId
+    | 
+      (*%
+        @format({id,funId,argId}) "structure(" id "=" funId "(" argId")" ")" 
+       *)
+      (*% @prefix printTy_
+        @format({id,funId,argId}) "structure(" id "=" funId "(" argId")" ")" 
+       *)
+      FUNAPP of {id:structureId, funId:functorId, argId:structureId}
+    | 
+      (*%
+        @format(id) "structureInFunarg(" id ")" 
+       *)
+      (*% @prefix printTy_
+        @format(id) "structureInFunarg(" id ")" 
+       *)
+      FUNARG of structureId
+
+  (*%
+     @formatter(SymbolEnv.map) TermFormat.formatEnclosedSymbolEnvPlain
+   *)
+  (*% @prefix printTy_
+     @params(sname,mode,name)
+     @formatter(SymbolEnv.map) SmlppgUtil.formatSymbolMapWithEnclosure
+   *)
+  (* structure environment *)
+  datatype strE
+    = 
+      (*%
+         @format(strEntry senv)
+          "{"
+           1[
+             senv(strEntry)(1, ":"+1)
+            ]
+           1
+          "}"
+       *)
+      (*% @prefix printTy_
+         @format(strEntry senv)
+           senv(strEntry()(sname,mode,name))(+":"+1, ~2[\n "and" +], \n "structure" +,)
+       *)
+      STR of strEntry SymbolEnv.map
+
+  and env
+    = 
+      (*%
+         @format({varE, tyE, strE}) 
+          "{"
+           1[
+             +1
+              1["tyE:"+1 tyE]
+             +1
+              1["strE:"+1 strE]
+             +1
+              1["varE:"+1 varE]
+            ]
+           +1
+           "}"
+       *)
+      (*% @prefix printTy_
+         @format({varE, tyE, strE}) 
+          "sig"
+           2[
+             tyE()(sname,mode,name)
+             varE()(sname,mode,name)
+             strE()(sname,mode,name)
+            ]
+          \n
+          "end"
+       *)
+      ENV of {varE: varE, tyE: tyE, strE: strE}
+
+  withtype strEntry 
+    = 
+      (*%
+        @format({env, strKind, loc, definedSymbol}) "("strKind")" + env
+       *)
+      (*% @prefix printTy_
+        @format({env:Env, strKind, loc, definedSymbol}) 
+          Env()(sname,mode,name)
+       *)
+      {env:env, strKind:strKind, loc:Loc.loc, 
+       definedSymbol:Symbol.longsymbol}
+  and sigEntry 
+    = 
+      (*%
+        @format({env, sigId, loc}) "(" sigId ")" + env
+       *)
+      (*% @prefix printTy_
+        @format({env:Env, sigId, loc}) 
+          Env()(sname,mode,name)
+       *)
+      {env:env, sigId:signatureId, loc:Loc.loc}
+
+  fun extendEnv sname env =
+      sname # {env = env :: #env sname}
+  fun extendEnvWithStrEntry sname {env, strKind, loc, definedSymbol} =
+      sname # {env = env :: #env sname}
+
+  (*%
+     @formatter(Symbol.symbol) Symbol.format_symbol
+     @formatter(I.icexp) I.format_icexp
+     @formatter(TypID.Set.set) formatEnclosedTypidSet
+     @formatter(ExnID.Set.set) formatEnclosedExnIdSet
+   *)
+  (*% @prefix printTy_
+     @params(sname,mode,name)
+     @formatter(Symbol.symbol) Symbol.format_symbol
+     @formatter(I.icexp) I.print_icexp
+     @formatter(TypID.Set.set) formatEnclosedTypidSet
+     @formatter(ExnID.Set.set) formatEnclosedExnIdSet
+     @formatter(extendEnv) extendEnv
+     @formatter(extendEnvWithStrEntry) extendEnvWithStrEntry
+   *)
+  type funEEntry
+    = 
+      (*%
+        @format({id,
+                 loc,
+                 version,
+                 argSigEnv,
+                 argStrEntry,
+                 argStrName,
+                 dummyIdfunArgTy:dummyId opt,
+                 polyArgTys:argTy argTys,
+                 typidSet,
+                 exnIdSet,
+                 bodyEnv,
+                 bodyVarExp})
+           "(" id ") {"
+           1[+1
+             {1["argSigEnv:"+1 argSigEnv]}
+             +1
+             {1["argStrEntry:"+1 argStrEntry]}
+             +1 "argStrName:" argStrName
+             +1
+             {1["dummyIdfunArgTy:"+1 opt(dummyId)]}
+             +1
+             {1["polyArgTys:"+1 "[" argTys(argTy)(",") "]" ]}
+             +1 
+             {1["typidSet:"+1 typidSet()("(",",",") ") ]}
+             +1 
+             {1["exnIdSet:"+1 exnIdSet()("(",",",") ") ]}
+             +1
+             {1["bodyEnv:"+1 bodyEnv]}
+             +1
+             {1["bodyVarExp:"+1 bodyVarExp]}
+           ]
+           +1
+           "}"
+         *)
+      (*% @prefix printTy_
+        @format({id,
+                 loc,
+                 version,
+                 argSigEnv,
+                 argStrEntry,
+                 argStrName,
+                 dummyIdfunArgTy:dummyId opt,
+                 polyArgTys:argTy argTys,
+                 typidSet,
+                 exnIdSet,
+                 bodyEnv,
+                 bodyVarExp})
+              2[
+                \n
+                "(" argSigEnv()(argSigEnv:extendEnv()(sname),mode,name) ")"
+                 +1
+                 ":"
+                 2[\n bodyEnv()(bodyEnv:extendEnv()(argStrEntry:extendEnvWithStrEntry()(sname)),mode,name)]
+              ]
+         *)
+       {id: functorId,
+        loc:Loc.loc,
+        version: IDCalc.version,
+        argSigEnv: env,
+        argStrEntry: strEntry,
+        argStrName: Symbol.symbol,
+        dummyIdfunArgTy: ty option,
+        polyArgTys: ty list,
+        typidSet: TypID.Set.set,
+        exnIdSet: ExnID.Set.set,
+        bodyEnv: env,
+        bodyVarExp: I.icexp (* varInfo *)
+       }
+
+
+  (*%
+    @formatter(SymbolEnv.map) TermFormat.formatEnclosedSymbolEnvPlain
+   *)
+  (*% @prefix printTy_
+    @params(sname,mode,name)
+    @formatter(SymbolEnv.map) TermFormat.formatEnclosedSymbolEnvPlain
+   *)
+  type funE
+    = 
+      (*%
+         @format(funEEntry senv)
+          "{"
+           1[
+             senv(funEEntry)(1, +":"+1)
+            ]
+           1
+          "}"
+       *)
+      (*% @prefix printTy_
+         @format(funEEntry senv)
+          "{"
+           1[
+             senv(funEEntry()(sname,mode,name))(1, +":"+1)
+            ]
+           1
+          "}"
+       *)
+      funEEntry SymbolEnv.map
+         
+  (*%
+    @formatter(SymbolEnv.map) TermFormat.formatEnclosedSymbolEnvPlain
+   *)
+  (*% @prefix printTy_
+     @params(sname,mode,name)
+     @formatter(SymbolEnv.map) SmlppgUtil.formatSymbolMap
+   *)
+  type sigE
+    = 
+      (*%
+         @format(env senv)  senv(env)(+1"and"+, ":")
+       *)
+      (*% @prefix printTy_
+         @format(env senv)
+          2[
+            senv(env()(sname,mode,name))("signature" + ,+"="+,~2[+1 "and"+],)
+          ]
+       *)
+      sigEntry SymbolEnv.map
+
+  (*%
+     @formatter(Symbol.symbol) Symbol.format_symbol
+   *)
+  (*% @prefix printTy_
+     @params(sname,mode,name)
+     @formatter(Symbol.symbol) Symbol.format_symbol
+     @formatter(extendEnv) extendEnv
+   *)
+  type sigEList 
+    = (*%
+         @format(sige siges)
+       *)
+      (*% @prefix printTy_
+         @format(sige siges)
+           siges(sige)(\n)
+         @format:sige(name * env)
+          2[
+            "signature" + name + "="
+            \n
+            env()(env:extendEnv()(sname),mode,name)
+           ]
+       *)
+    (Symbol.symbol * env) list
+
+  (*%
+   *)
+  (*% @prefix printTy_
+   *)
+  type topEnv
+    = 
+      (*%
+        @format({Env, FunE, SigE})
+         Env
+         +1
+         FunE
+         +1
+         SigE
+       *)
+      (*% @prefix printTy_
+        @format({Env, FunE, SigE})
+          "*** topEnv printer is not used at runtime ***"
+       *)
+    {Env:env, FunE:funE, SigE: sigE}
+
+  fun tstrFormals tstr =
+      case tstr of 
+       TSTR {tfun, ...} => I.tfunFormals tfun
+     | TSTR_DTY {tfun,...} => I.tfunFormals tfun
+
+  fun tstrLiftedTys tstr =
+      case tstr of 
+       TSTR {tfun,...} => I.tfunLiftedTys tfun
+     | TSTR_DTY {tfun,...} => I.tfunLiftedTys tfun
+
+  fun tstrArity tstr = List.length (tstrFormals tstr)
+
+  fun tstrToString tstr =
+      Bug.prettyPrint (format_tstr tstr)
+  fun tyEToString tyE =
+      Bug.prettyPrint (format_tyE tyE)
+  fun envToString env = 
+      Bug.prettyPrint (format_env env)
+  fun topEnvToString (env:topEnv) = 
+      Bug.prettyPrint (format_topEnv env)
+  fun funEToString funE = 
+      Bug.prettyPrint (format_funE funE)
+
+  val emptyVarE = SymbolEnv.empty : varE
+  val emptyTyE = SymbolEnv.empty : tyE
+  val emptyEnv = 
+      ENV{varE=emptyVarE, tyE = emptyTyE, strE=STR SymbolEnv.empty}
+  val emptyTopEnv = 
+      {Env=emptyEnv, FunE=SymbolEnv.empty, SigE=SymbolEnv.empty} : topEnv
+
+  fun replaceLocTyE loc tyE =
+      SymbolEnv.mapi2 
+      (fn (symbol, tstr) =>
+          (Symbol.replaceLocSymbol loc symbol, tstr))
+      tyE
+
+  fun replaceLocVarE loc varE =
+      SymbolEnv.mapi2
+      (fn (symbol, idstatus) =>
+          (Symbol.replaceLocSymbol loc symbol, idstatus))
+      varE
+          
+  fun replaceLocStrEntry newLoc {env, strKind, loc, definedSymbol} =
+      {env = replaceLocEnv newLoc env, strKind = strKind, loc=loc, 
+       definedSymbol = definedSymbol}
+
+  and replaceLocEnv loc (ENV {varE, tyE, strE}) =
+      ENV {varE = replaceLocVarE loc varE,
+           tyE =  replaceLocTyE loc tyE,
+           strE = replaceLocStrE loc strE}
+
+  and replaceLocStrE loc (STR strentryMap) =
+      STR (SymbolEnv.mapi2 
+             (fn (symbol, strEntry) =>
+                 (Symbol.replaceLocSymbol loc symbol, 
+                  replaceLocStrEntry loc strEntry))
+             strentryMap)
+
+  fun unionVarE code (varE1, varE2) =
+      SymbolEnv.unionWithi2
+        (fn ((symbol1, v1), (symbol2,v2)) =>
+            (EU.enqueueError 
+               (Symbol.symbolToLoc symbol2, 
+                E.DuplicateVar(code ^ "v", symbol2));
+             (symbol2, v2))
+        )
+        (varE1, varE2)
+
+  fun unionTyE code (tyE1, tyE2) =
+      SymbolEnv.unionWithi2
+        (fn ((symbol1,v1), (symbol2,v2)) =>
+            (EU.enqueueError
+               (Symbol.symbolToLoc symbol2, 
+                E.DuplicateTypName(code ^ "v", symbol2)); 
+             (symbol2, v2))
+        )
+        (tyE1, tyE2)
+            
+  fun unionStrE code (STR map1, STR map2) =
+      STR
+        (
+         SymbolEnv.unionWithi2
+           (fn ((symbol1,v1), (symbol2,v2)) =>
+               (EU.enqueueError
+                  (Symbol.symbolToLoc symbol2, 
+                   E.DuplicateStrName(code ^ "v", symbol2)); 
+                (symbol2, v2))
+           )
+           (map1, map2)
+        )
+            
+  fun unionFunE code (funE1, funE2) =
+      SymbolEnv.unionWithi2
+        (fn ((symbol,v1),(symbol2,v2)) =>
+            (EU.enqueueError
+               (Symbol.symbolToLoc symbol2, 
+                E.DuplicateFunctor(code ^ "f", symbol2));
+             (symbol2, v2))
+        )
+      (funE1, funE2)
+
+  fun unionSigE code (sigE1, sigE2) =
+      SymbolEnv.unionWithi2
+        (fn ((symbol1,v1),(symbol2,v2)) =>
+            (EU.enqueueError
+               (Symbol.symbolToLoc symbol2, 
+                E.DuplicateSigname(code ^ "s", symbol2));
+             (symbol2,v2))
+        )
+        (sigE1, sigE2)
+
+  fun unionEnv code (ENV {varE=varE1, strE=strE1, tyE=tyE1},
+                     ENV {varE=varE2, strE=strE2, tyE=tyE2})
+      =
+      let
+        val varE = unionVarE code (varE1, varE2)
+        val tyE = unionTyE code (tyE1, tyE2)
+        val strE = unionStrE code (strE1, strE2)
+      in
+        ENV{varE=varE, strE=strE, tyE=tyE}
+      end
+
+  fun unionTopEnv code
+        ({Env=env1,FunE=funE1,SigE=sige1},{Env=env2,FunE=funE2,SigE=sige2})
+      : topEnv
+      =
+      {Env = unionEnv code (env1, env2),
+       FunE = unionFunE code (funE1, funE2),
+       SigE = unionSigE code (sige1, sige2)
+      }
+
+(*
+  val conEnv = ref (BuiltinTypes.builtinConEnv())
+  fun conEnvAdd (id, conInfo) = 
+      conEnv := ConID.Map.insert(!conEnv, id, conInfo)
+  fun conEnvFind id = 
+      case ConID.Map.find(!conEnv, id) of
+        SOME conInfo => conInfo
+      | NONE => raise bug "conid not found in conEnv"
+*)
+
+(*
+  datatype exnCon = EXN of I.exnInfo | EXEXN of I.exInfo
+
+  structure ExnConOrd =
+  struct
+    type ord_key = exnCon
+    fun compare (exncon1, exncon2) =
+        case (exncon1, exncon2) of
+          (EXN _, EXEXN _) => LESS
+        | (EXEXN _, EXN _) => GREATER
+        | (EXN {id=id1,...}, EXN {id=id2, ...})  => ExnID.compare(id1,id2)
+        | (EXEXN {longsymbol=longsymbol1,...}, 
+           EXEXN {longsymbol=longsymbol2,...})  =>
+          let
+            val string1 = Symbol.longsymbolToString longsymbol1
+            val string2 = Symbol.longsymbolToString longsymbol2
+          in
+            String.compare(string1, string2)
+          end
+  end
+  structure ExnConSet = BinarySetFn(ExnConOrd)
+  val exnConSetRef = ref ExnConSet.empty
+  fun exnConAdd exnCon = 
+      exnConSetRef := ExnConSet.add (!exnConSetRef, exnCon)
+  fun exnConList () = ExnConSet.listItems (!exnConSetRef)
+  fun intExnConList () = exnConSetRef := ExnConSet.empty
+*)
+
+  (* find function *)
+  fun findId (ENV {varE, tyE, strE = STR envSymbolEnvMap}, longsymbol) =
+      case longsymbol of 
+        nil => raise bug "nil to findId"
+      | symbol :: nil => SymbolEnv.findi(varE, symbol)
+      | strsymbol :: path =>
+        (case SymbolEnv.findi(envSymbolEnvMap, strsymbol) of
+           NONE => NONE
+         | SOME (syn, {env,...}) => findId (env, path)
+        )
+
+  (* find function *)
+  fun findTstr (ENV {varE, tyE, strE = STR envSymbolEnvMap}, longsymbol) =
+      case longsymbol of 
+        nil => raise bug "*** nil to findTstr *** "
+      | symbol :: nil => 
+        (case SymbolEnv.findi(tyE, symbol) of
+           NONE => NONE
+         | SOME (key, tstr) => SOME (key, tstr)
+        )
+      | strsymbol :: path =>
+        (case SymbolEnv.findi(envSymbolEnvMap, strsymbol) of
+           NONE => NONE
+         | SOME (symbolInEnv, {env,...}) => findTstr (env, path)
+        )
+
+
+end
+end

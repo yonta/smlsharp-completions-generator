@@ -1,0 +1,141 @@
+(* _require "../../../basis.smi" *)
+_require "./FormatTemplate.smi"
+_require local "./AST.sig"
+
+structure Ast =
+struct
+  type srcpos = int
+  type region = int * int
+  type path = string list
+  type headerFormatComment = 
+      {
+        destinationOpt : string option,
+        formatters : (string * string) list,
+        funHeaderOpt : string option,
+        params : {
+          params : string list,
+          externs : (string * string) list
+        },
+        ditto : string list,
+        prefix : string
+      }
+  type innerHeaderFormatComment = 
+      {
+        formatters : (string * string) list,
+        params : string list,
+        prefix : string option
+      }
+  type definingFormatComment = 
+      {
+        prefix : string,
+        primaryTag : FormatTemplate.formattag,
+        localTags : FormatTemplate.formattag list
+      }
+  datatype strexp =
+      VarStr
+    | BaseStr of dec
+    | ConstrainedStr of strexp
+    | AppStr
+    | LetStr of dec * strexp
+  and fctexp =
+      VarFct
+    | BaseFct of
+      {
+        body : strexp
+      }
+    | LetFct of dec * fctexp
+    | AppFct
+  and dec =
+      ValDec
+    | ValrecDec
+    | FunDec
+    | TypeDec of
+      {
+        formatComments : headerFormatComment list,
+        tbs : tb list,
+        region : region
+      }
+    | DatatypeDec of
+      {
+        formatComments : headerFormatComment list,
+        datatycs: db list,
+        withtycs: tb list,
+        region: region
+      }
+    | AbstypeDec of
+      {
+        formatComments : headerFormatComment list,
+        abstycs: db list,
+        withtycs: tb list,
+        bodyBeginPos : srcpos,
+        region: region
+      }
+    | ExceptionDec of
+      {
+        formatComments : headerFormatComment list,
+        ebs : eb list,
+        region : region
+      }
+    | StrDec of strb list
+    | FctDec of fctb list
+    | SigDec
+    | FsigDec
+    | LocalDec of dec * dec
+    | SeqDec of dec list
+    | OpenDec
+    | OvldDec
+    | FixDec
+  and tb =
+      Tb of
+      {
+        tyConName : string,
+        ty : ty,
+        tyvars : tyvar list,
+        formatComments : definingFormatComment list,
+        innerHeaderFormatComments: innerHeaderFormatComment list
+      }
+  and db =
+      Db of {tyConName : string, tyvars : tyvar list, rhs : dbrhs,
+             innerHeaderFormatComments: innerHeaderFormatComment list}
+  and dbrhs =
+      Constrs of
+      {
+        formatComments : definingFormatComment list,
+        valConName : string,
+        argTypeOpt : ty option
+      } list
+    | Repl of string list
+  and eb =
+      EbGen of
+      {
+        formatComments : definingFormatComment list,
+        innerHeaderFormatComments: innerHeaderFormatComment list,
+        exn: string,
+        etype: ty option
+      }
+    | EbDef of
+      {
+        formatComments : definingFormatComment list,
+        innerHeaderFormatComments: innerHeaderFormatComment list,
+        exn: string,
+        edef: path
+      }
+  and strb =
+      Strb of {name: string,def: strexp}
+  and fctb =
+      Fctb of {name: string,def: fctexp}
+  and tyvar =
+      Tyv of string
+  and ty =
+      VarTy of tyvar
+    | ConTy of string list * ty list
+    | RecordTy of (string * ty) list
+    | TupleTy of ty list
+  val DefaultFormatterPrefix : string
+  datatype parse_result =
+      Header of headerFormatComment list
+    | InnerHeader of innerHeaderFormatComment list
+    | Defining of definingFormatComment list
+    | DefiningWithInner of
+      innerHeaderFormatComment list * definingFormatComment list
+end 

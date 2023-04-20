@@ -1,0 +1,52 @@
+(* -*- sml -*- *)
+(**
+ * FFI attributes
+ *
+ * @copyright (C) 2021 SML# Development Team.
+ * @author UENO Katsuhiro
+ *)
+structure FFIAttributes =
+struct
+
+  (*% *)
+  datatype callingConvention =
+      (*% @format "cdecl" *) FFI_CDECL
+    | (*% @format "stdcall" *) FFI_STDCALL
+    | (*% @format "fastcc" *) FFI_FASTCC
+
+  (*%
+   * @formatter(bool) SmlppgUtil.formatBinaryChoice
+   *)
+  type attributes =
+      (*%
+       * @format({isPure, fast, unsafe, causeGC, callingConvention: cc ccopt})
+       * "__attr__(("
+       * isPure()("pure,",)
+       * fast()("fast,",)
+       * unsafe()("unsafe,",)
+       * causeGC()("gc,",)
+       * ccopt(cc)
+       * "))"
+       *)
+      {
+        isPure: bool,
+        fast: bool,
+        unsafe: bool,
+        causeGC: bool,
+        callingConvention: callingConvention option
+      }
+
+  val defaultFFIAttributes =
+      {
+        isPure = false,
+        fast = false,
+        unsafe = false,
+        causeGC = false,
+        callingConvention = NONE
+      }
+
+  (*% *)
+  datatype globalSymbolKind =
+      ForeignCodeSymbol
+
+end

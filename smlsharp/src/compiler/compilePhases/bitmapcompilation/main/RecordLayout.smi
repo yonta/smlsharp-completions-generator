@@ -1,0 +1,30 @@
+_require local "../../../../basis.smi"
+
+_require       "./RecordLayoutCalc.ppg.smi"
+_require local "../../../data/runtimetypes/main/RuntimeTypes.ppg.smi"
+_require local "../../../data/symbols/main/Symbol.smi"
+_require local "../../../extensions/debug/main/Bug.smi"
+_require local "../../../libs/ids/main/LocalID.smi"
+_require local "../../../../smlnj-lib/Util/binary-map-fn.smi"
+
+structure RecordLayout =
+struct
+
+  type computation_accum (= ref)
+  val newComputationAccum : unit -> computation_accum
+  val extractDecls : computation_accum -> RecordLayoutCalc.dec list
+
+  val computeIndex
+      : computation_accum
+        -> {size: RecordLayoutCalc.value} list * {size: RecordLayoutCalc.value}
+        -> RecordLayoutCalc.value
+  val computeRecord
+      : computation_accum
+        -> {tag: RecordLayoutCalc.value, size: RecordLayoutCalc.value} list
+        -> {allocSize: RecordLayoutCalc.value,
+            fieldIndexes: RecordLayoutCalc.value list,
+            bitmaps: {index: RecordLayoutCalc.value,
+                      bitmap: RecordLayoutCalc.value} list,
+            padding: bool}
+
+end 

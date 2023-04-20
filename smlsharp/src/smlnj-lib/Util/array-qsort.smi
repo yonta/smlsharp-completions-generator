@@ -1,0 +1,8 @@
+_require "../../basis.smi"
+_require local "./array-sort-sig.sml"
+
+structure ArrayQSort =
+struct
+  val sort   : ('a * 'a -> order) -> 'a array -> unit
+  val sorted : ('a * 'a -> order) -> 'a array -> bool
+end
