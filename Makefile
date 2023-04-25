@@ -1,6 +1,10 @@
+# clear implicit rules
+.SUFFIXES:
+
 SMLSHARP = smlsharp
 SMLFLAGS = -O2
 LIBS =
+
 all: CompletionsGenerator
 CompletionsGenerator: smlsharp/src/basis/main/General.smi \
  smlsharp/src/basis/main/StringCvt.smi smlsharp/src/basis/main/List.smi \
