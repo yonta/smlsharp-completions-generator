@@ -1,9 +1,13 @@
+# clear implicit rules
+.SUFFIXES:
+
 SMLSHARP = smlsharp
 SMLFLAGS = -O2
 LIBS =
 SMLFORMAT = smlformat
 SMLLEX = smllex
 SMLYACC = smlyacc
+
 all: CompletionsGenerator
 CompletionsGenerator: smlsharp/src/compiler/libs/env/main/SOrd.smi \
  smlsharp/src/compiler/libs/env/main/SEnv.smi \
