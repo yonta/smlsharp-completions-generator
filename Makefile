@@ -475,20 +475,7 @@ CompletionsGenerator.o: CompletionsGenerator.sml \
  CompletionsGenerator.smi
 	$(SMLSHARP) $(SMLFLAGS) -o CompletionsGenerator.o -c \
  CompletionsGenerator.sml
-smlsharp/src/compiler/extensions/usererror/main/UserError.ppg.sml: \
- smlsharp/src/compiler/extensions/usererror/main/UserError.ppg
-	$(SMLFORMAT) --output=$@ $<
-smlsharp/src/compiler/extensions/format-utils/main/SmlppgUtil.ppg.sml: \
- smlsharp/src/compiler/extensions/format-utils/main/SmlppgUtil.ppg
-	$(SMLFORMAT) --output=$@ $<
-smlsharp/src/compiler/compilerIRs/absyn/main/InterfaceName.ppg.sml: \
- smlsharp/src/compiler/compilerIRs/absyn/main/InterfaceName.ppg
-	$(SMLFORMAT) --output=$@ $<
-smlsharp/src/compiler/compilerIRs/absyn/main/AbsynInterface.ppg.sml: \
- smlsharp/src/compiler/compilerIRs/absyn/main/AbsynInterface.ppg
-	$(SMLFORMAT) --output=$@ $<
-smlsharp/src/compiler/compilePhases/parser/main/ParserError.ppg.sml: \
- smlsharp/src/compiler/compilePhases/parser/main/ParserError.ppg
+%.ppg.sml: %.ppg
 	$(SMLFORMAT) --output=$@ $<
 smlsharp/src/compiler/compilerIRs/absyn/main/AbsynTyFormatter.sml: \
  smlsharp/src/compiler/compilerIRs/absyn/main/AbsynTy.sml
@@ -502,11 +489,9 @@ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynSQLFormatter.sml: \
 smlsharp/src/compiler/compilerIRs/absyn/main/AbsynFormatter.sml: \
  smlsharp/src/compiler/compilerIRs/absyn/main/Absyn.sml
 	$(SMLFORMAT) --output=$@ --separate=AbsynFormatter $<
-smlsharp/src/compiler/compilePhases/parser/main/interface.grm.sml: \
- smlsharp/src/compiler/compilePhases/parser/main/interface.grm
+%.grm.sml: %.grm
 	$(SMLYACC) -s -p $< $<
-smlsharp/src/compiler/compilePhases/parser/main/interface.lex.sml: \
- smlsharp/src/compiler/compilePhases/parser/main/interface.lex
+%.lex.sml: %.lex
 	$(SMLLEX) -o $@ $<
 
 clean:
