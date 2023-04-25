@@ -11,7 +11,7 @@ structure AbsynInterface =
 struct
 
   (*% *)
-  datatype constraint 
+  datatype constraint
     = (*% @format ":" *)
       SIG_TRANSPARENT
     | (*% @format ":>" *)
@@ -32,13 +32,13 @@ struct
   (*%
    * @formatter(Absyn.tvar) AbsynFormatter.format_tvar
    *)
-  datatype overloadInstance 
+  datatype overloadInstance
     = (*% @format(exp) exp *)
       INST_OVERLOAD of overloadCase
     | (*% @format({longsymbol}) longsymbol *)
       INST_LONGVID of {longsymbol: longsymbol}
 
-  withtype overloadCase 
+  withtype overloadCase
     = (*%
        * @format({tyvar, expTy, matches: m ms, loc})
        * "case" +d tyvar +d "in" +d expTy +d "of" +1 ms(m)(+1 "|" +d)
@@ -51,7 +51,7 @@ struct
        loc: loc}
 
   (*% @params(symbol) *)
-  datatype valbindBody 
+  datatype valbindBody
     = (*%
          @format({ty})
            1[ symbol + ":" +1 ty]
@@ -75,7 +75,7 @@ struct
       VAL_OVERLOAD of overloadCase
 
   (*% *)
-  type valbind 
+  type valbind
     = (*%
        * @format({symbol, body, loc}) body()(symbol)
        *)
@@ -101,7 +101,7 @@ struct
    * @formatter(Absyn.tvar) AbsynFormatter.format_tvar
    * @formatter(bool) SmlppgUtil.formatBinaryChoice
    *)
-  datatype typbind 
+  datatype typbind
     = (*% @format(t) t *)
       TRANSPARENT of typbind_trans
     | (*%
@@ -115,7 +115,7 @@ struct
   (*%
    * @formatter(option) TermFormat.formatOptionalOption
    *)
-  type conbind 
+  type conbind
     = (*%
        * @format({symbol, ty: ty tyopt, loc})
        * R1{ symbol +d 2[ tyopt(ty)("of" +1,) ] }
@@ -127,14 +127,14 @@ struct
    * @formatter(ifCons) TermFormat.formatIfCons
    * @formatter(Absyn.tvar) AbsynFormatter.format_tvar
    *)
-  type datbind 
+  type datbind
     = (*%
          @format({tyvars: tv tvs, symbol, conbind: bind binds, loc})
          1[
-           tvs:seq(tv)("(",",",")") 
+           tvs:seq(tv)("(",",",")")
            tvs:ifCons()(+)
            symbol +d "="
-           +1 
+           +1
            binds(bind)(+1 "|" +d)
          ]
        *)
@@ -143,7 +143,7 @@ struct
   (*%
    * @formatter(option) TermFormat.formatOptionalOption
    *)
-  datatype exbind 
+  datatype exbind
     = (*%
        * @format({symbol, ty: ty tyopt, loc})
        * R1{ symbol +d 2[ tyopt(ty)("of" +1,) ] }
@@ -159,7 +159,7 @@ struct
    * @formatter(declist) TermFormat.formatDeclList
    * @formatter(Absyn.sigexp) AbsynFormatter.format_sigexp
    *)
-  datatype idec 
+  datatype idec
     = (*%
        * @format(bind)
        * "val" +d bind
@@ -202,7 +202,7 @@ struct
        *)
       ISTRUCTURE of strbind
 
-  and istrexp 
+  and istrexp
     = (*%
           @format({decs: dec decs, loc})
             "struct"
@@ -220,12 +220,12 @@ struct
        *)
       IFUNCTORAPP of {functorSymbol:symbol, argument:longsymbol, loc: loc}
 
-  withtype strbind 
+  withtype strbind
     = (*%
           @format({symbol, strexp, loc})
-            1[ 
-              "structure" + symbol  +d "=" 
-              +1 strexp 
+            1[
+              "structure" + symbol  +d "="
+              +1 strexp
             ]
        *)
       {
@@ -237,7 +237,7 @@ struct
   (*%
    * @formatter(Absyn.sigexp) AbsynFormatter.format_sigexp
    *)
-  type sigbind 
+  type sigbind
     = (*%
          @format({symbol, sigexp, loc})
           1[ symbol +d "=" +1 sigexp]
@@ -248,10 +248,10 @@ struct
    * @formatter(Absyn.sigexp) AbsynFormatter.format_sigexp
    * @formatter(Absyn.spec) AbsynFormatter.format_spec
    *)
-  datatype funParam 
+  datatype funParam
     = (*%
          @format({symbol, sigexp})
-           symbol + ":" 
+           symbol + ":"
            +1
            sigexp
        *)
@@ -264,13 +264,13 @@ struct
   (*%
    * @formatter(Absyn.sigexp) AbsynFormatter.format_sigexp
    *)
-  type funbind 
+  type funbind
     = (*%
          @format({functorSymbol, param, strexp, loc})
-           1[ 
+           1[
              "functor" + functorSymbol
-             +1 "(" 1[param] ")" +d "=" 
-             +1 strexp 
+             +1 "(" 1[param] ")" +d "="
+             +1 strexp
            ]
        *)
       {
@@ -284,7 +284,7 @@ struct
    * @formatter(IntInf.int) TermFormat.format_IntInf_dec_ML
    * @formatter(option) TermFormat.formatOptionalOption
    *)
-  datatype fixity 
+  datatype fixity
     = (*% @format(x xo) "infix" xo(x)(+d,) *)
       INFIXL of string option
     | (*% @format(x xo) "infixr" xo(x)(+d,) *)
@@ -293,7 +293,7 @@ struct
       NONFIX
 
   (*% *)
-  datatype itopdec 
+  datatype itopdec
     = (*% @format(x) x *)
       IDEC of idec
     | (*%
@@ -330,7 +330,7 @@ struct
    * @formatter(dec) TermFormat.formatDeclList
    * @formatter(RequirePath.path) RequirePath.format_path
    *)
-  datatype itop 
+  datatype itop
     = (*%
        * @format({requires: req reqs, provide: x xs})
        * reqs:dec(req)(+1,+1) xs(x)(+1)
