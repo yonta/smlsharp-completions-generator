@@ -1,2 +1,0 @@
-_require "./084_sig4.sig"
-structure T = struct val y : int end

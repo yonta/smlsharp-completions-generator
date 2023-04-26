@@ -1,2 +1,0 @@
-_require "124_open2.smi"
-val x : int

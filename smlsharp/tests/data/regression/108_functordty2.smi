@@ -1,5 +1,0 @@
-functor F (X : sig end) =
-struct
-  datatype t = T of s
-  and s = S of t | U
-end

@@ -1,8 +1,0 @@
-_require "basis.smi"
-_require "ffi/main/Pointer.smi"
-
-structure Main =
-struct
-  val doit : unit -> unit
-  val testit : TextIO.outstream -> unit
-end

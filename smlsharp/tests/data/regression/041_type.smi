@@ -1,5 +1,0 @@
-_require "basis.smi"
-structure G =
-struct
-  type 'a t (= array)
-end

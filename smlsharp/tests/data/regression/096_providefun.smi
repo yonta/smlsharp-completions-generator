@@ -1,8 +1,0 @@
-_require "096_providefun2.smi"
-functor F (
-  A : sig
-    type t = S.t
-  end
-) =
-struct
-end

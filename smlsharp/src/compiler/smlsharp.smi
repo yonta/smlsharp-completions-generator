@@ -1,2 +1,0 @@
-_require local "../prelude.smi" init (* for interactive mode *)
-_require local "./compilePhases/main/main/Main.smi"

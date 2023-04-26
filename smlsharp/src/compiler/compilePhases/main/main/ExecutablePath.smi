@@ -1,4 +1,0 @@
-structure ExecutablePath =
-struct
-  val getPath : unit -> string option
-end

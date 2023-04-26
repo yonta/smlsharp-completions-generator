@@ -1,5 +1,0 @@
-structure S =
-struct
-  exception E
-end
-exception E = S.E

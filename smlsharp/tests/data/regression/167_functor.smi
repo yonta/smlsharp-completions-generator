@@ -1,8 +1,0 @@
-_require "167_functor2.smi"
-
-functor F(
-  A : sig
-    type vector = t
-  end) =
-struct
-end

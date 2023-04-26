@@ -1,5 +1,0 @@
-structure A =
-  struct 
-     val f : int -> int
-  end
-

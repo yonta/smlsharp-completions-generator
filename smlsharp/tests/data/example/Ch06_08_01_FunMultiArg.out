@@ -1,7 +1,0 @@
-val powerUncurry = fn : int * int -> int
-
-val it = 9 : int
-
-val powerCurry = fn : int -> int -> int
-
-val it = 9 : int

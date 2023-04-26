@@ -1,8 +1,0 @@
-_require "../../basis.smi"
-_require "./fnv-hash.smi"
-
-structure HashString =
-struct
-  val hashString = FNVHash.hashString
-  val hashSubstring = FNVHash.hashSubstring
-end

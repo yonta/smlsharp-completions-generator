@@ -1,8 +1,0 @@
-_require "114_exnrep2.smi"
-structure S =
-struct
-  structure T =
-  struct
-    exception E = T2.E
-  end
-end

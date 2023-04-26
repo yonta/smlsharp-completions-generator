@@ -1,7 +1,0 @@
-_require "../../basis.smi"
-_require local "./yacc.smi"
-
-structure ExportParseGen =
-struct
-  val parseGen : string * string list -> OS.Process.status
-end

@@ -1,3 +1,0 @@
-_require "basis.smi"
-_require "main.smi"
-val x : unit

@@ -1,2 +1,0 @@
-_require "basis.smi"
-val sub : 'a array * int -> 'a

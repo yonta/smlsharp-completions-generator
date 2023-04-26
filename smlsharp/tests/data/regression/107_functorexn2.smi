@@ -1,4 +1,0 @@
-functor F(A : sig end) =
-struct
-  exception E
-end

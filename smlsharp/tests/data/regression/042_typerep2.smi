@@ -1,4 +1,0 @@
-structure S =
-struct
-  datatype option = datatype option
-end

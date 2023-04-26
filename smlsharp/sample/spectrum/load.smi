@@ -1,3 +1,0 @@
-_require "./display_glut.smi"
-(* _require "./display_text.smi" *)
-(* _require "./display_curses.smi" *)

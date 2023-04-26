@@ -1,2 +1,0 @@
-_require "./070_include2.smi"
-val x : int * int

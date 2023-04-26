@@ -1,2 +1,0 @@
-_require "./012_require4.smi"
-val y : int

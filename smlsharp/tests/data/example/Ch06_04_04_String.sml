@@ -1,2 +1,0 @@
-"SML#" ^ "\n";
-print it;

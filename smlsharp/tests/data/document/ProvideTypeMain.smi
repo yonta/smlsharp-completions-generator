@@ -1,3 +1,0 @@
-_require "basis.smi"
-_require local "smlunit-lib.smi"
-_require "./ProvideType.smi"

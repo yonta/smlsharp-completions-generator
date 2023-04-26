@@ -1,3 +1,0 @@
-type 'a mem = unit
-val x : unit mem
-val f : 'a mem * 'a mem -> 'a mem

@@ -1,5 +1,0 @@
-_require "107_functorexn2.smi"
-structure S =
-struct
-  exception E
-end

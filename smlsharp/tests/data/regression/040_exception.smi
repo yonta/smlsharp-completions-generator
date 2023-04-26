@@ -1,4 +1,0 @@
-structure G =
-struct
-  exception E
-end
