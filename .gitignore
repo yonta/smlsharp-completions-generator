@@ -8,3 +8,4 @@
 **/*.grm.sml
 **/*.lex.sml
 **/*Formatter.sml
+smlsharp/src/config/main/SQLConfig.sml
