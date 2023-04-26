@@ -54,7 +54,7 @@ struct
   datatype valbindBody
     = (*%
          @format({ty})
-           1[ symbol + ":" +1 ty]
+           1[ symbol + ":" + ty]
        *)
       VAL_EXTERN of {ty: ty}
     | (*%
@@ -156,13 +156,14 @@ struct
       EXNREP of {symbol: symbol, longsymbol: longsymbol, loc: loc}
 
   (*%
+   * @params (strname)
    * @formatter(declist) TermFormat.formatDeclList
    * @formatter(Absyn.sigexp) AbsynFormatter.format_sigexp
    *)
   datatype idec
     = (*%
        * @format(bind)
-       * "val" +d bind
+       * "val" +d strname "." bind
        *)
       IVAL of valbind
     | (*%
@@ -196,17 +197,15 @@ struct
        * "exception" +d binds(bind)(+1 "and" +d)
        *)
       IEXCEPTION of exbind list
-    | (*%
-         @format(bind)
-           bind
-       *)
+    | (*% @format(bind) bind()(strname) *)
       ISTRUCTURE of strbind
 
+  (*% @params (strname) *)
   and istrexp
     = (*%
           @format({decs: dec decs, loc})
             "struct"
-               1[ decs:declist(dec)(+1,+1) ]
+               1[ decs:declist(dec()(strname))(+1,+1) ]
             +1
             "end"
        *)
@@ -221,13 +220,7 @@ struct
       IFUNCTORAPP of {functorSymbol:symbol, argument:longsymbol, loc: loc}
 
   withtype strbind
-    = (*%
-          @format({symbol, strexp, loc})
-            1[
-              "structure" + symbol  +d "="
-              +1 strexp
-            ]
-       *)
+    = (*% @format({symbol, strexp, loc}) strexp()(symbol) *)
       {
         symbol: symbol,
         strexp: istrexp,
@@ -270,7 +263,7 @@ struct
            1[
              "functor" + functorSymbol
              +1 "(" 1[param] ")" +d "="
-             +1 strexp
+             +1 strexp()(functorSymbol)
            ]
        *)
       {
@@ -294,7 +287,7 @@ struct
 
   (*% *)
   datatype itopdec
-    = (*% @format(x) x *)
+    = (*% @format(x) x()("") *)
       IDEC of idec
     | (*%
         @format(bind)
@@ -313,16 +306,14 @@ struct
    *)
   datatype irequire =
       (*%
-       * @format(s * opt opts * l) "_require" +d s opts(opt)()
-       * @format:opt(opt) +d opt
+       * @format(s * opt opts * l) ""
        *)
       REQUIRE of RequirePath.path * Symbol.symbol list * loc
     | (*%
-       * @format(s * opt opts * l) "local" +d "_require" +d s opts(opt)()
-       * @format:opt(opt) +d opt
+       * @format(s * opt opts * l) ""
        *)
       LOCAL_REQUIRE of RequirePath.path * Symbol.symbol list * loc
-    | (*% @format(s * l) "local" +d "_use" +d s *)
+    | (*% @format(s * l) "" *)
       LOCAL_USE of RequirePath.path * loc
 
   (*%
@@ -332,8 +323,7 @@ struct
    *)
   datatype itop
     = (*%
-       * @format({requires: req reqs, provide: x xs})
-       * reqs:dec(req)(+1,+1) xs(x)(+1)
+       * @format({requires: req reqs, provide: x xs}) xs(x)(+1)
        *)
       INTERFACE of
       {

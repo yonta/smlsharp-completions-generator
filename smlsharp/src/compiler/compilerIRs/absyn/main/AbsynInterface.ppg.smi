@@ -187,11 +187,14 @@ struct
   val format_exbind
       : exbind -> SMLFormat.FormatExpression.expression list
   val format_idec
-      : idec -> SMLFormat.FormatExpression.expression list
+      : SMLFormat.FormatExpression.expression list ->
+        idec -> SMLFormat.FormatExpression.expression list
   val format_istrexp
-      : istrexp -> SMLFormat.FormatExpression.expression list
+      : SMLFormat.FormatExpression.expression list
+        -> istrexp -> SMLFormat.FormatExpression.expression list
   val format_strbind
-      : strbind -> SMLFormat.FormatExpression.expression list
+      : SMLFormat.FormatExpression.expression list
+        -> strbind -> SMLFormat.FormatExpression.expression list
   val format_sigbind
       : sigbind -> SMLFormat.FormatExpression.expression list
   val format_funParam
