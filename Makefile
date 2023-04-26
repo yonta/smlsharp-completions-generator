@@ -3,6 +3,9 @@
 
 SMLSHARP = smlsharp
 SMLFLAGS = -O2
+SMLFORMAT = smlformat
+SMLYACC = smlyacc
+SMLLEX = smllex
 LIBS =
 
 all: CompletionsGenerator
@@ -22570,3 +22573,24 @@ CompletionsGenerator.o: CompletionsGenerator.sml \
  CompletionsGenerator.smi
 	$(SMLSHARP) $(SMLFLAGS) -o CompletionsGenerator.o -c \
  CompletionsGenerator.sml
+smlsharp/src/compiler/compilerIRs/absyn/main/AbsynTyFormatter.sml: \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynTy.sml
+	$(SMLFORMAT) --output=$@ --separate=AbsynTyFormatter $<
+smlsharp/src/compiler/compilerIRs/absyn/main/AbsynConstFormatter.sml: \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynConst.sml
+	$(SMLFORMAT) --output=$@ --separate=AbsynConstFormatter $<
+smlsharp/src/compiler/compilerIRs/absyn/main/AbsynSQLFormatter.sml: \
+ smlsharp/src/compiler/compilerIRs/absyn/main/AbsynSQL.sml
+	$(SMLFORMAT) --output=$@ --separate=AbsynSQLFormatter $<
+smlsharp/src/compiler/compilerIRs/absyn/main/AbsynFormatter.sml: \
+ smlsharp/src/compiler/compilerIRs/absyn/main/Absyn.sml
+	$(SMLFORMAT) --output=$@ --separate=AbsynFormatter $<
+%.ppg.sml: %.ppg
+	$(SMLFORMAT) --output=$@ $<
+%.grm.sml: %.grm
+	$(SMLYACC) -s -p $< $<
+%.lex.sml: %.lex
+	$(SMLLEX) -o $@ $<
+smlsharp/src/config/main/SQLConfig.sml: \
+ smlsharp/src/config/main/SQLConfig.sml.in
+	sed -e 's"%DLLEXT%"$(DLLEXT)"' $< > $@
