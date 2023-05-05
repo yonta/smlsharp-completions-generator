@@ -6,3 +6,4 @@ _require "./smlsharp/src/compiler/compilerIRs/absyn/main/Absyn.smi"
 _require "./smlsharp/src/compiler/compilePhases/parser/main/Parser.smi"
 _require "./smlsharp/src/compiler/compilerIRs/absyn/main/InterfaceName.ppg.smi"
 _require "./smlsharp/src/compiler/compilePhases/loadfile/main/LoadFile.smi"
+(* _require "./smlsharp/src/compiler/compilePhases/elaborate/main/Elaborator.smi" *)

@@ -18,3 +18,11 @@ val options = { baseFilename = NONE,
                 loadMode = InterfaceName.COMPILE,
                 defaultInterface = fn x => x }
 val (dependency, prelude, interfaceUnit) = LoadFile.load options absyn
+
+(* prelude *)
+val (dependency, abunit) =
+    doLoadInterface options
+                    [(Loc.STDPATH,
+                      Filename.fromString "./smlsharp/src/prelude.smi")]
+val (newFixEnv, plunit) = doElabInterface options context abunit
+val (newFixEnv, plunit, _(* warnings*)) = Elaborator.elaborate fixEnv abunit
